@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+		<style>
+			#inputs { float:left; }
+			#viz { padding-left:50px; float:left; }
+		</style>
+    </head>
+    <body>
+		<div id="inputs">
+			<h3>Enter info!</h3>
+			<p>
+				<label for="gIncome" 
+					style="display: inline-block; text-align: left">
+					gross income = <span id="gIncome-value"></span>
+				</label>
+				<input type="number" min="20000" max="200000" step="1000" value="50000" id="gIncome">
+			</p>
+			<p>
+				<label for="ltcg" 
+					style="display: inline-block; text-align: left">
+					long-term capital gains = <span id="ltcg-value"></span>
+				</label>
+				<input type="number" min="0" max="200000" step="1000" value="0" id="ltcg">
+			</p>
+			<p>
+				<label for="exemp" 
+					style="display: inline-block; text-align: left">
+					personal exemptions = <span id="exemp-value"></span>
+				</label>
+				<input type="number" min="0" max="10" step="1" value="1" id="exemp">
+			</p>
+			<p>
+				<label for="deduct" 
+					style="display: inline-block; text-align: left">
+					deductions = <span id="deduct-value"></span>
+				</label>
+				<input type="number" min="6300" max="100000" step="100" value="6300" id="deduct">
+			</p>
+		</div>
+		<div id="viz">
+			<h3>Viz will be here!</h3>
+		</div>
+        <script type="text/javascript">
+            
+			var width = 600;
+			var height = 600;
+			
+			var svg = d3.select("#viz")
+				.append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				
+			// Initialize variables
+			var gIncome = 50000;
+			var ltcg = 0;
+			var exemp = 1;
+			var deduct = 6300;
+			
+			// Utility functions necessary for generate()
+			function rescale(){};
+			
+			function 
+			
+			// Function to generate everything
+			function generate(gIncome, ltcg, exemp, deduct) {
+			
+				d3.select("svg")
+			};
+			
+			// On input, update variables and regenerate
+			d3.select("#gIncome").on("input", function() {
+				gIncome = +this.value;
+				generate(gIncome, ltcg, exemp, deduct);
+				});
+			d3.select("#ltcg").on("input", function() {
+				ltcg = +this.value;
+				generate(gIncome, ltcg, exemp, deduct);
+				});
+			d3.select("#exemp").on("input", function() {
+				exemp = +this.value;
+				generate(gIncome, ltcg, exemp, deduct);
+				});
+			d3.select("#deduct").on("input", function() {
+				deduct = +this.value;
+				generate(gIncome, ltcg, exemp, deduct);
+				});
+			
+        </script>
+    </body>
+</html>
