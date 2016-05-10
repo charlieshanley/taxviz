@@ -49,6 +49,7 @@
 		</div>
         <script type="text/javascript">
             
+			// Initial d3 stuff
 			var width = 600;
 			var height = 600;
 			var barheight = 400;
@@ -58,23 +59,39 @@
 				        .attr("width", width)
 				        .attr("height", height)
 				
-			// Initialize variables
-			var gIncome = 50000;
-			var ltcg = 0;
-			var exemp = 1;
-			var deduct = 6300;
+			// Initialize input object
+			var inputs = new Object();
+			inputs.gIncome = 50000;
+			inputs.ltcg = 0;
+			inputs.exemp = 1;
+			inputs.deduct = 6300;
 			
-			// Compute tax values
+			// Set static tax values
+			var tax_brackets = [0, 9275, 37650, 91150, 190150, 413350];
+			var income_tax_rates = [10, 15, 25, 28, 33];
+			var ltcg_tax_rates = [0, 0, 15, 15, 15];
+			var fica_tax_brackets = [0, 118500, 1000000];
+			var fica_tax_rates = [7.65, 1.45];
+			var p_exemp_value = 4050;
 			
-			// Utility functions necessary for generate()
-			var scale = d3.scale.linear()
-			                    .domain([0, gIncome])
-			                    .range([0, barheigth]);
 			
-			
-			
+			//=================================================================
+			// Set up utility functions
+								
+			// Get dynamic tax values
+			function get_inc_brackets (inputs) {
+				var nontaxed = inputs.deduct + inputs.exemp * p_exemp_value;
+				
+				nontaxed = Math.min(nontaxed, inputs.gIncome);
+				inc_brackets = tax_brackets.map(function(x) { return x + nontaxed });
+				
+				return inc_brackets;
+			};
+
+
+			//=================================================================
 			// Function to initially generate everything
-			function init_gen(gIncome, ltcg, exemp, deduct) {
+			function init_gen(inputs) {
 			
 				var gIncome_bar = d3.select("svg")
 				                    .append("rect")
@@ -82,44 +99,65 @@
 				                    .attr("x", 100)
 				                    .attr("y", 0)
 				                    .attr("width", 50)
-				                    .attr("height", barheight)
 				                    .attr("fill", "green")
 				                    .attr("opacity", 2/3);
 				                    
-			    var income_tax_brac = ;
-			    var ltcg_tax_brac = ;
-			    var payroll_tax_brac = ;
-			    var nIncome_bar = ;
-			    var tax_bar = ;
+				var inc_tax_bar = d3.select("svg")
+									.append("line")
+									.attr("id", "inc_tax_bar")
+									.attr("x1", 70)
+									.attr("x2", 70)
+
+									.attr("stroke", "red");
+									
 				                    
-				                    
-			    regen(gIncome, ltcg, exemp, deduct);
+			    regen(inputs);
 			};
-			
+
+			//=================================================================			
 			// Function to regenerate things when values updated
 			
-			function regen(gIncome, ltcg, exemp, deduct) {};
+			function regen(inputs) {
 			
+				// Redefine dollar to pixel scale
+				var scale = d3.scale.linear()
+									.domain([0, inputs.gIncome])
+									.range([0, barheight]);
+									
+				// Recalculate income tax brackets
+				var inc_brackets = get_inc_brackets(inputs);
+				
+				// Change bar sizes
+				d3.select("#gIncome_bar")
+					.attr("height", scale(inputs.gIncome))
+					
+				d3.select("#inc_tax_bar")
+					.attr("y1", 400 - scale(inc_brackets[0]))
+					.attr("y2", 400 - scale(inc_brackets[1]));
+			};
+
+			//=================================================================			
 			// On input, update variables and regenerate
 			d3.select("#gIncome").on("input", function() {
-				gIncome = +this.value;
-				regen(gIncome, ltcg, exemp, deduct);
+				inputs.gIncome = +this.value;
+				regen(inputs);
 				});
 			d3.select("#ltcg").on("input", function() {
-				ltcg = +this.value;
-				regen(gIncome, ltcg, exemp, deduct);
+				inputs.ltcg = +this.value;
+				regen(inputs);
 				});
 			d3.select("#exemp").on("input", function() {
-				exemp = +this.value;
-				regen(gIncome, ltcg, exemp, deduct);
+				inputs.exemp = +this.value;
+				regen(inputs);
 				});
 			d3.select("#deduct").on("input", function() {
-				deduct = +this.value;
-				regen(gIncome, ltcg, exemp, deduct);
+				inputs.deduct = +this.value;
+				regen(inputs);
 				});
-			
+
+			//=================================================================				
 			// Generate everything with initial values
-			init_gen(gIncome, ltcg, exemp, deduct);
+			init_gen(inputs);
 			
         </script>
     </body>
