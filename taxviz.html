@@ -10,6 +10,18 @@
 		<style>
 			#inputs { float:left; }
 			#viz { padding-left:50px; float:left; }
+			
+			.axis path,
+			.axis line {
+				fill: none;
+				stroke: black;
+				shape-rendering: crispEdges;
+			}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
 		</style>
     </head>
     <body>
@@ -53,6 +65,7 @@
 			var width = 600;
 			var height = 600;
 			var barheight = 400;
+			var ypadding = 10;
 			
 			var svg = d3.select("#viz")
 				        .append("svg")
@@ -60,11 +73,12 @@
 				        .attr("height", height)
 				
 			// Initialize input object
-			var inputs = new Object();
-			inputs.gIncome = 50000;
-			inputs.ltcg = 0;
-			inputs.exemp = 1;
-			inputs.deduct = 6300;
+			var inputs = {
+				gIncome: 50000,
+				ltcg: 0,
+				exemp: 1,
+				deduct: 6300
+			};
 			
 			// Set static tax values
 			var tax_brackets = [0, 9275, 37650, 91150, 190150, 413350];
@@ -78,7 +92,6 @@
 			//=================================================================
 			// Set up utility functions
 								
-			// Get dynamic tax values
 			function get_inc_brackets (inputs) {
 				var nontaxed = inputs.deduct + inputs.exemp * p_exemp_value;
 				
@@ -88,7 +101,7 @@
 				return inc_brackets;
 			};
 
-
+			var yAxis;
 			//=================================================================
 			// Function to initially generate everything
 			function init_gen(inputs) {
@@ -110,7 +123,12 @@
 
 									.attr("stroke", "red");
 									
-				                    
+				// Generate axis group
+				d3.select("svg")
+					.append("g")
+					.attr("class", "axis")				
+					.attr("transform", "translate(50, 0)");
+					
 			    regen(inputs);
 			};
 
@@ -119,21 +137,29 @@
 			
 			function regen(inputs) {
 			
-				// Redefine dollar to pixel scale
+				// Define dollar to pixel scale
 				var scale = d3.scale.linear()
 									.domain([0, inputs.gIncome])
-									.range([0, barheight]);
+									.range([barheight, 0]);
+									
+				// Generate axis and call it on axis group
+				yAxis = d3.svg.axis()
+					.orient("left")
+					.ticks(5)
+					.scale(scale);
+				d3.select(".axis")
+					.call(yAxis);
 									
 				// Recalculate income tax brackets
 				var inc_brackets = get_inc_brackets(inputs);
 				
 				// Change bar sizes
 				d3.select("#gIncome_bar")
-					.attr("height", scale(inputs.gIncome))
+					.attr("height", barheight - scale(inputs.gIncome))
 					
 				d3.select("#inc_tax_bar")
-					.attr("y1", 400 - scale(inc_brackets[0]))
-					.attr("y2", 400 - scale(inc_brackets[1]));
+					.attr("y1", scale(inc_brackets[0]))
+					.attr("y2", scale(inc_brackets[1]));
 			};
 
 			//=================================================================			
