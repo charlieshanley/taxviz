@@ -100,8 +100,25 @@
 				
 				return inc_brackets;
 			};
+			
+			// Scale to relate tax rates to opacity for tax-bracket lines
+			var colorScale = d3.scale.linear()
+									.domain([0, 33])
+									.range(["white", "red"]);
+			
+			// Utility function to find sum of array ( in concert with .reduce() )
+			function add(a, b) {
+				return a + b;
+			};
+			
+			// Function to get number of tax brackets
+			function get_n_brackets (inputs) {
+				return get_inc_brackets(inputs)
+					.map(function(x) {return (inputs.gIncome > x)})
+					.reduce(add, 0);
+			};
 
-			var yAxis;
+			var yAxis, barScale;
 			//=================================================================
 			// Function to initially generate everything
 			function init_gen(inputs) {
@@ -115,13 +132,12 @@
 				                    .attr("fill", "green")
 				                    .attr("opacity", 2/3);
 				                    
-				var inc_tax_bar = d3.select("svg")
-									.append("line")
-									.attr("id", "inc_tax_bar")
-									.attr("x1", 70)
-									.attr("x2", 70)
-
-									.attr("stroke", "red");
+			//	var inc_tax_bar = d3.select("svg")
+			//						.append("line")
+			//						.attr("id", "inc_tax_bar")
+			//						.attr("x1", 70)
+			//						.attr("x2", 70)
+			//						.attr("stroke", "red");
 									
 				// Generate axis group
 				d3.select("svg")
@@ -138,7 +154,7 @@
 			function regen(inputs) {
 			
 				// Define dollar to pixel scale
-				var scale = d3.scale.linear()
+				barScale = d3.scale.linear()
 									.domain([0, inputs.gIncome])
 									.range([barheight, 0]);
 									
@@ -146,7 +162,7 @@
 				yAxis = d3.svg.axis()
 					.orient("left")
 					.ticks(5)
-					.scale(scale);
+					.scale(barScale);
 				d3.select(".axis")
 					.call(yAxis);
 									
@@ -155,11 +171,27 @@
 				
 				// Change bar sizes
 				d3.select("#gIncome_bar")
-					.attr("height", barheight - scale(inputs.gIncome))
+					.attr("height", barheight - barScale(inputs.gIncome))
 					
-				d3.select("#inc_tax_bar")
-					.attr("y1", scale(inc_brackets[0]))
-					.attr("y2", scale(inc_brackets[1]));
+				// Function to create and adjust income bracket lines
+				function draw_inc_brackets (inputs) {
+					var nBrackets = get_n_brackets(inputs);
+					for (i = 0; i < nBrackets; i++){
+						d3.select("svg")
+							.append("g")
+							.attr("id", "income_tax_lines")
+							.append("line")
+							.attr("x1", 70)
+							.attr("x2", 70)
+							.attr("stroke", "red")
+							.attr("y1", barScale(get_inc_brackets(inputs)[i]))
+							.attr("y2", barScale(get_inc_brackets(inputs)[i+1]))
+							.attr("stroke", colorScale(income_tax_rates[i]));
+					}
+				};
+					
+				d3.select(".income_tax_lines").remove();
+				draw_inc_brackets(inputs);
 			};
 
 			//=================================================================			
