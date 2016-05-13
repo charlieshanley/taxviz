@@ -66,6 +66,7 @@
 			var height = 600;
 			var barheight = 400;
 			var ypadding = 10;
+			var linewidth = 5;
 			
 			var svg = d3.select("#viz")
 				        .append("svg")
@@ -103,8 +104,8 @@
 			
 			// Scale to relate tax rates to opacity for tax-bracket lines
 			var colorScale = d3.scale.linear()
-									.domain([0, 33])
-									.range(["white", "red"]);
+									.domain([0, 25, 33])
+									.range(["white", "red", "purple"]);
 			
 			// Utility function to find sum of array ( in concert with .reduce() )
 			function add(a, b) {
@@ -183,14 +184,22 @@
 							.append("line")
 							.attr("x1", 70)
 							.attr("x2", 70)
-							.attr("stroke", "red")
+							.attr("stroke-width", linewidth)
 							.attr("y1", barScale(get_inc_brackets(inputs)[i]))
 							.attr("y2", barScale(get_inc_brackets(inputs)[i+1]))
+							.attr("stroke", colorScale(income_tax_rates[i]));
+						d3.select("#income_tax_lines")
+							.append("line")
+							.attr("x1", 70)
+							.attr("x2", 90)
+							.attr("stroke-width", linewidth)
+							.attr("y1", barScale(get_inc_brackets(inputs)[i+1]) + linewidth/2)
+							.attr("y2", barScale(get_inc_brackets(inputs)[i+1]) + linewidth/2)
 							.attr("stroke", colorScale(income_tax_rates[i]));
 					}
 				};
 					
-				d3.select(".income_tax_lines").remove();
+				d3.select("#income_tax_lines").remove();
 				draw_inc_brackets(inputs);
 			};
 
