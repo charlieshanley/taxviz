@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+		<style>
+			#inputs { float:left; }
+			#viz { padding-left:50px; float:left; }
+			
+			.axis path,
+			.axis line {
+				fill: none;
+				stroke: black;
+				shape-rendering: crispEdges;
+			}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+		</style>
+    </head>
+    <body>
+		<div id="inputs">
+			<h3>Enter info!</h3>
+			<p>
+				<label for="earned_income" 
+					style="display: inline-block; text-align: left">
+					earned income (and short-term capital gains) = <span id="earned_income-value"></span>
+				</label>
+				<input type="number" min="20000" max="200000" step="1000" value="50000" id="earned_income">
+			</p>
+			<p>
+				<label for="ltcg" 
+					style="display: inline-block; text-align: left">
+					long-term capital gains = <span id="ltcg-value"></span>
+				</label>
+				<input type="number" min="0" max="200000" step="1000" value="0" id="ltcg">
+			</p>
+			<p>
+				<label for="exemptions" 
+					style="display: inline-block; text-align: left">
+					personal exemptions = <span id="exemp-value"></span>
+				</label>
+				<input type="number" min="0" max="10" step="1" value="1" id="exemptions">
+			</p>
+			<p>
+				<label for="deductions" 
+					style="display: inline-block; text-align: left">
+					deductions = <span id="deduct-value"></span>
+				</label>
+				<input type="number" min="6300" max="100000" step="100" value="6300" id="deductions">
+			</p>
+		</div>
+		<div id="viz">
+			<h3>Viz will be here!</h3>
+		</div>
+        <script type="text/javascript">
+            
+			// Initial d3 stuff
+			var width = 600;
+			var height = 600;
+			var bar_height = 400;
+			var y_padding = 10;
+			var line_width = 5;
+			
+			var svg = d3.select("#viz")
+				        .append("svg")
+				        .attr("width", width)
+				        .attr("height", height)
+				
+			// Initialize input object
+			var inputs = {
+				earned_income: 50000,
+				ltcg: 0,
+				exemptions: 1,
+				deductions: 6300
+			};
+			
+			// Set static tax values object
+			var single = {
+			        income_tax: {
+			            brackets: [0, 9275, 37650, 91150, 190150, 413350],
+    			        rates: [10, 15, 25, 28, 33]},
+	    		    ltcg_tax: {
+			            brackets: [0, 37650, 413350],
+	    		        rates: [0, 15]},
+	    		    fica_tax: {
+	    		        brackets: [0, 118500, 1000000],
+	    		        rates: [7.65, 1.45]},
+	    		    personal_exemption_value: 4050
+			};
+			
+			
+			
+			//=================================================================			
+			// On input, update variables and regenerate
+			d3.select("#gIncome").on("input", function() {
+				inputs.gIncome = +this.value;
+				regen(inputs);
+				});
+			d3.select("#ltcg").on("input", function() {
+				inputs.ltcg = +this.value;
+				regen(inputs);
+				});
+			d3.select("#exemp").on("input", function() {
+				inputs.exemp = +this.value;
+				regen(inputs);
+				});
+			d3.select("#deduct").on("input", function() {
+				inputs.deduct = +this.value;
+				regen(inputs);
+				});
+
+			//=================================================================				
+			// Generate everything with initial values
+			init_gen(inputs);
+			
+        </script>
+    </body>
+</html>
