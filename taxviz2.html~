@@ -83,16 +83,64 @@
 			
 			// Set static tax values object
 			var single = {
-			        income_tax: {
-			            brackets: [0, 9275, 37650, 91150, 190150, 413350],
-    			        rates: [10, 15, 25, 28, 33]},
-	    		    ltcg_tax: {
-			            brackets: [0, 37650, 413350],
-	    		        rates: [0, 15]},
-	    		    fica_tax: {
-	    		        brackets: [0, 118500, 1000000],
-	    		        rates: [7.65, 1.45]},
+    			    income_tax: [
+    			        {bracket: 9275, rate: 10},
+    			        {bracket: 37650, rate: 15},
+    			        {bracket: 91150, rate: 25},
+    			        {bracket: 190150, rate: 28},
+    			        {bracket: 413350, rate: 33}
+    			    ],
+	    		    ltcg_tax: [
+	    		        {bracket: 37650, rate: 0},
+	    		        {bracket: 413350, rate: 15}
+	    		    ],
+	    		    fica_tax: [
+	    		        {bracket: 118500, rate: 7.65},
+	    		        {bracket: 1000000, rate: 1.45}
+	    		        ],
 	    		    personal_exemption_value: 4050
+			};
+			
+			// Utility functions
+			
+			function add(a, b) {
+				return a + b;
+			};
+			
+			function get_tax_brackets(taxable_income, brackets) {
+			    var n_brackets = brackets
+			                     .map(function(x) {return (taxable_income > x.bracket)})
+			                     .reduce(add, 0);
+			    return brackets.slice(0, n_brackets + 1);
+			};
+			
+			
+			// Function to generate calculated values
+			function calculated_values(inputs, static_vals) {
+			    var calc = new Object();
+			    calc.taxable_income =
+			        Math.max(inputs.earned_income - inputs.deductions
+			        - (inputs.exemptions * static_vals.personal_exemption_val), 0);
+			    calc.income_tax =
+			        get_tax_brackets(calc.taxable_income, static_vals.income_tax);
+//			        marginal: ,
+//			        average: ,
+//			        due: };
+			    calc.fica =
+			        get_tax_brackets(inputs.earned_income, static_vals.fica);
+//			        marginal: ,
+//			        average:  ,
+//			        due: };
+			    calc.ltcg = 
+			        get_tax_brackets(calc.taxable_income + inputs.ltcg, static_vals.fica);
+//			        marginal:  ,
+//			        due: };
+//			    calc.net = {
+//			        earned_income: ,
+//			        ltcg: };
+			    
+			    
+			    return calc;
 			};
 			
 			
