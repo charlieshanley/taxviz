@@ -120,19 +120,19 @@
 			    var calc = new Object();
 			    calc.taxable_income =
 			        Math.max(inputs.earned_income - inputs.deductions
-			        - (inputs.exemptions * static_vals.personal_exemption_val), 0);
+			        - (inputs.exemptions * static_vals.personal_exemption_value), 0);
 			    calc.income_tax =
 			        get_tax_brackets(calc.taxable_income, static_vals.income_tax);
 //			        marginal: ,
 //			        average: ,
 //			        due: };
 			    calc.fica =
-			        get_tax_brackets(inputs.earned_income, static_vals.fica);
+			        get_tax_brackets(inputs.earned_income, static_vals.fica_tax);
 //			        marginal: ,
 //			        average:  ,
 //			        due: };
 			    calc.ltcg = 
-			        get_tax_brackets(calc.taxable_income + inputs.ltcg, static_vals.fica);
+			        get_tax_brackets(calc.taxable_income + inputs.ltcg, static_vals.ltcg_tax);
 //			        marginal:  ,
 //			        due: };
 //			    calc.net = {
@@ -144,23 +144,43 @@
 			};
 			
 			
+			// Function to regenerate after  values change.
+			function regen(inputs, static_vals) {
+			
+			    // Define dollar to pixel scale
+		        barScale = d3.scale.linear()
+		                           .domain([0, inputs.gIncome * 1.05])
+							       .range([bar_height, 0]);
+							       
+				// Generate axis and call it on axis group TODO: create axis once and update it.
+				yAxis = d3.svg.axis()
+					.orient("left")
+					.ticks(5)
+					.scale(barScale);
+				d3.select(".axis")
+					.call(yAxis);
+					
+			    // Recalculate calculated values
+
+			}
+							
 			
 			//=================================================================			
 			// On input, update variables and regenerate
-			d3.select("#gIncome").on("input", function() {
-				inputs.gIncome = +this.value;
+			d3.select("#earned_income").on("input", function() {
+				inputs.earned_income = +this.value;
 				regen(inputs);
 				});
 			d3.select("#ltcg").on("input", function() {
 				inputs.ltcg = +this.value;
 				regen(inputs);
 				});
-			d3.select("#exemp").on("input", function() {
-				inputs.exemp = +this.value;
+			d3.select("#exemptions").on("input", function() {
+				inputs.exemptions = +this.value;
 				regen(inputs);
 				});
-			d3.select("#deduct").on("input", function() {
-				inputs.deduct = +this.value;
+			d3.select("#deductions").on("input", function() {
+				inputs.deductions = +this.value;
 				regen(inputs);
 				});
 
