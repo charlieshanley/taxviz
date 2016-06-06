@@ -17,11 +17,10 @@
 				stroke: black;
 				shape-rendering: crispEdges;
 			}
-
-.axis text {
-    font-family: sans-serif;
-    font-size: 11px;
-}
+            .axis text {
+                font-family: sans-serif;
+                font-size: 11px;
+            }
 		</style>
     </head>
     <body>
@@ -61,28 +60,21 @@
 		</div>
         <script type="text/javascript">
             
-			// Initial d3 stuff
+			// Initial variables
 			var width = 600;
 			var height = 600;
 			var bar_height = 400;
-			var y_padding = 10;
+			var y_padding = 80;
 			var line_width = 5;
-			
-			var svg = d3.select("#viz")
-				        .append("svg")
-				        .attr("width", width)
-				        .attr("height", height)
-				
+							
 			// Initialize input object
 			var inputs = {
 				earned_income: 50000,
 				ltcg: 0,
 				exemptions: 1,
-				deductions: 6300
-			};
-			
-			// Set static tax values object
-			var single = {
+				deductions: 6300,
+				// Set static tax values object
+				reg: {
     			    income_tax: [
     			        {bracket: 9275, rate: 10},
     			        {bracket: 37650, rate: 15},
@@ -99,7 +91,8 @@
 	    		        {bracket: 1000000, rate: 1.45}
 	    		        ],
 	    		    personal_exemption_value: 4050
-			};
+	    		}
+	        };
 			
 			// Utility functions
 			
@@ -116,23 +109,23 @@
 			
 			
 			// Function to generate calculated values
-			function calculated_values(inputs, static_vals) {
+			function calculated_values(inputs) {
 			    var calc = new Object();
 			    calc.taxable_income =
 			        Math.max(inputs.earned_income - inputs.deductions
-			        - (inputs.exemptions * static_vals.personal_exemption_value), 0);
+			        - (inputs.exemptions * inputs.reg.personal_exemption_value), 0);
 			    calc.income_tax =
-			        get_tax_brackets(calc.taxable_income, static_vals.income_tax);
+			        get_tax_brackets(calc.taxable_income, inputs.reg.income_tax);
 //			        marginal: ,
 //			        average: ,
 //			        due: };
 			    calc.fica =
-			        get_tax_brackets(inputs.earned_income, static_vals.fica_tax);
+			        get_tax_brackets(inputs.earned_income, inputs.reg.fica_tax);
 //			        marginal: ,
 //			        average:  ,
 //			        due: };
 			    calc.ltcg = 
-			        get_tax_brackets(calc.taxable_income + inputs.ltcg, static_vals.ltcg_tax);
+			        get_tax_brackets(calc.taxable_income + inputs.ltcg, inputs.reg.ltcg_tax);
 //			        marginal:  ,
 //			        due: };
 //			    calc.net = {
@@ -143,22 +136,39 @@
 			    return calc;
 			};
 			
+			// Initialize things
+            var svg = d3.select("#viz")
+			            .append("svg")
+			            .attr("width", width)
+			            .attr("height", height);
+				
+			// Generate scale            
+			var barScale = d3.scale.linear()
+		                       .domain([0, inputs.earned_income * 1.05])
+			    		       .range([bar_height, 0]);
+			
+			// Generate axis and call it on axis group			       
+			var yAxis = d3.svg.axis()
+			            .orient("left")
+			            .ticks(5)
+			            .scale(barScale)
+//			            .tickSize(-width, 1, 1).tickFormat("")
+			            ;
+			svg.append("g")
+               .attr("class", "yaxis")
+               .attr("transform", "translate("+y_padding+",0)")
+               .call(yAxis);
+			
 			
 			// Function to regenerate after  values change.
-			function regen(inputs, static_vals) {
+			function update(inputs) {
 			
-			    // Define dollar to pixel scale
-		        barScale = d3.scale.linear()
-		                           .domain([0, inputs.gIncome * 1.05])
-							       .range([bar_height, 0]);
-							       
-				// Generate axis and call it on axis group TODO: create axis once and update it.
-				yAxis = d3.svg.axis()
-					.orient("left")
-					.ticks(5)
-					.scale(barScale);
-				d3.select(".axis")
-					.call(yAxis);
+			    // Update dollar to pixel scale, then axis
+		        barScale.domain([0, inputs.earned_income * 1.05]);
+                
+                svg.select(".yaxis")
+                   .transition().duration(1500).ease("sin-in-out")  // https://github.com/mbostock/d3/wiki/Transitions#wiki-d3_ease
+                   .call(yAxis); 
 					
 			    // Recalculate calculated values
 
@@ -169,24 +179,21 @@
 			// On input, update variables and regenerate
 			d3.select("#earned_income").on("input", function() {
 				inputs.earned_income = +this.value;
-				regen(inputs);
+				update(inputs);
 				});
 			d3.select("#ltcg").on("input", function() {
 				inputs.ltcg = +this.value;
-				regen(inputs);
+				update(inputs);
 				});
 			d3.select("#exemptions").on("input", function() {
 				inputs.exemptions = +this.value;
-				regen(inputs);
+				update(inputs);
 				});
 			d3.select("#deductions").on("input", function() {
 				inputs.deductions = +this.value;
-				regen(inputs);
+				update(inputs);
 				});
 
-			//=================================================================				
-			// Generate everything with initial values
-			init_gen(inputs);
 			
         </script>
     </body>
