@@ -31,14 +31,14 @@
 					style="display: inline-block; text-align: left">
 					earned income (and short-term capital gains) = <span id="earned_income-value"></span>
 				</label>
-				<input type="number" min="20000" max="200000" step="1000" value="50000" id="earned_income">
+				<input type="number" min="20000" max="500000" step="1000" value="50000" id="earned_income">
 			</p>
 			<p>
 				<label for="ltcg" 
 					style="display: inline-block; text-align: left">
 					long-term capital gains = <span id="ltcg-value"></span>
 				</label>
-				<input type="number" min="0" max="200000" step="1000" value="0" id="ltcg">
+				<input type="number" min="0" max="500000" step="1000" value="0" id="ltcg">
 			</p>
 			<p>
 				<label for="exemptions" 
@@ -52,7 +52,7 @@
 					style="display: inline-block; text-align: left">
 					deductions = <span id="deduct-value"></span>
 				</label>
-				<input type="number" min="6300" max="100000" step="100" value="6300" id="deductions">
+				<input type="number" min="6300" max="500000" step="100" value="6300" id="deductions">
 			</p>
 		</div>
 		<div id="viz">
@@ -69,26 +69,26 @@
 							
 			// Initialize input object
 			var inputs = {
-				earned_income: 50000,
+			    earned_income: 50000,
 				ltcg: 0,
 				exemptions: 1,
 				deductions: 6300,
 				// Set static tax values object
 				reg: {
-    			    income_tax: [
-    			        {bracket: 9275, rate: 10},
-    			        {bracket: 37650, rate: 15},
-    			        {bracket: 91150, rate: 25},
-    			        {bracket: 190150, rate: 28},
-    			        {bracket: 413350, rate: 33}
+    			    income_tax_brackets: [
+    			        {cap: 9275, rate: 10},
+    			        {cap: 37650, rate: 15},
+    			        {cap: 91150, rate: 25},
+    			        {cap: 190150, rate: 28},
+    			        {cap: 413350, rate: 33}
     			    ],
-	    		    ltcg_tax: [
-	    		        {bracket: 37650, rate: 0},
-	    		        {bracket: 413350, rate: 15}
+	    		    ltcg_tax_brackets: [
+	    		        {cap: 37650, rate: 0},
+	    		        {cap: 413350, rate: 15}
 	    		    ],
-	    		    fica_tax: [
-	    		        {bracket: 118500, rate: 7.65},
-	    		        {bracket: 1000000, rate: 1.45}
+	    		    fica_tax_brackets: [
+	    		        {cap: 118500, rate: 7.65},
+	    		        {cap: 1000000, rate: 1.45}
 	    		        ],
 	    		    personal_exemption_value: 4050
 	    		}
@@ -100,20 +100,37 @@
 				return a + b;
 			};
 			
+			function get_taxable_income(inputs) {
+			    return Math.max(
+			        inputs.earned_income - inputs.deductions -
+			        (inputs.exemptions * inputs.reg.personal_exemption_value),
+			        0);
+			};
+			
 			function get_tax_brackets(taxable_income, brackets) {
 			    var n_brackets = brackets
-			                     .map(function(x) {return (taxable_income > x.bracket)})
+			                     .map(function(x) {return (taxable_income > x.cap)})
 			                     .reduce(add, 0);
 			    return brackets.slice(0, n_brackets + 1);
+			};
+			
+			function get_tax(taxable_income, brackets) {
+			
+			};
+			
+			function get_marginal_tax() {
+			
+			};
+			
+			function get_average_tax() {
+			
 			};
 			
 			
 			// Function to generate calculated values
 			function calculated_values(inputs) {
 			    var calc = new Object();
-			    calc.taxable_income =
-			        Math.max(inputs.earned_income - inputs.deductions
-			        - (inputs.exemptions * inputs.reg.personal_exemption_value), 0);
+			    calc.taxable_income = get_taxable_income(inputs);
 			    calc.income_tax =
 			        get_tax_brackets(calc.taxable_income, inputs.reg.income_tax);
 //			        marginal: ,
@@ -162,6 +179,8 @@
 			
 			// Function to regenerate after  values change.
 			function update(inputs) {
+			 
+			    // Add feature to stop if update called again with x microseconds, so it only begins running when you're done moving inputs.
 			
 			    // Update dollar to pixel scale, then axis
 		        barScale.domain([0, inputs.earned_income * 1.05]);
