@@ -3,10 +3,10 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
-		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+		<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-		<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 		<style>
 			#inputs { float:left; }
 			#viz { padding-left:50px; float:left; }
@@ -76,22 +76,29 @@
 				// Set static tax values object
 				reg: {
     			    income_tax_brackets: [
-    			        {cap: 9275, rate: 10},
-    			        {cap: 37650, rate: 15},
-    			        {cap: 91150, rate: 25},
-    			        {cap: 190150, rate: 28},
-    			        {cap: 413350, rate: 33}
+    			        {cap: 9275, rate: 0.10},
+    			        {cap: 37650, rate: 0.15},
+    			        {cap: 91150, rate: 0.25},
+    			        {cap: 190150, rate: 0.28},
+    			        {cap: 413350, rate: 0.33}
     			    ],
 	    		    ltcg_tax_brackets: [
 	    		        {cap: 37650, rate: 0},
-	    		        {cap: 413350, rate: 15}
+	    		        {cap: 413350, rate: 0.15}
 	    		    ],
 	    		    fica_tax_brackets: [
-	    		        {cap: 118500, rate: 7.65},
-	    		        {cap: 1000000, rate: 1.45}
+	    		        {cap: 118500, rate: 0.0765},
+	    		        {cap: 1000000, rate: 0.0145}
 	    		        ],
 	    		    personal_exemption_value: 4050
-	    		}
+	    		},
+				get_taxable_income: function(){
+					return Math.max(
+						this.earned_income
+						- this.deductions
+						- (this.exemptions * this.reg.personal_exemption_value),
+						0);
+				}
 	        };
 			
 			// Utility functions
@@ -100,12 +107,6 @@
 				return a + b;
 			};
 			
-			function get_taxable_income(inputs) {
-			    return Math.max(
-			        inputs.earned_income - inputs.deductions -
-			        (inputs.exemptions * inputs.reg.personal_exemption_value),
-			        0);
-			};
 			
 			function get_tax_brackets(taxable_income, brackets) {
 			    var n_brackets = brackets
@@ -115,7 +116,26 @@
 			};
 			
 			function get_tax(taxable_income, brackets) {
-			
+				var my_b = get_tax_brackets(taxable_income, brackets);
+				var n = my_b.length;
+				var tax = 0;
+				
+				if (n == 1) {
+					// if only one bracket applies
+					tax += taxable_income * my_b[0].rate;
+				} else {
+					// marginal bracket
+					tax += (taxable_income - my_b[n - 2].cap) * my_b[n - 1].rate;
+					// bottom bracket
+					tax += my_b[0].cap * my_b[0].rate;
+					if (n >= 3) {
+						// all brackets between bottom and marginal
+						for (i = n - 2; i > 0; i--) {
+							tax += (my_b[i].cap - my_b[i - 1].cap) * my_b[i].rate;
+						} 
+					}
+				}
+				return tax;
 			};
 			
 			function get_marginal_tax() {
@@ -130,7 +150,7 @@
 			// Function to generate calculated values
 			function calculated_values(inputs) {
 			    var calc = new Object();
-			    calc.taxable_income = get_taxable_income(inputs);
+			    calc.taxable_income = inputs.get_taxable_income();
 			    calc.income_tax =
 			        get_tax_brackets(calc.taxable_income, inputs.reg.income_tax);
 //			        marginal: ,
