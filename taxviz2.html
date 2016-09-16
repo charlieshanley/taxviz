@@ -59,7 +59,9 @@
 			<h3>Viz will be here!</h3>
 		</div>
         <script type="text/javascript">
-            
+            //==============================================================================
+			//==============================================================================
+			
 			// Initial variables
 			var width = 600;
 			var height = 600;
@@ -67,7 +69,7 @@
 			var y_padding = 80;
 			var line_width = 5;
 			
-			//=================================================================
+			//==============================================================================
 			// Initialize input object
 			
 			var inputs = {
@@ -103,8 +105,8 @@
 				}
 	        };
 			
-			//=================================================================
-			// Utility functions
+			//==============================================================================
+			// Utility functions to calculate taxes
 			
 			function add(a, b) {
 				return a + b;
@@ -142,7 +144,7 @@
 			};
 			
 			
-			//=================================================================
+			//==============================================================================
 			// Function to generate calculated values
 			function calculate(inputs) {
 			
@@ -180,13 +182,14 @@
 						return amount_due;
 					}
 				};
-				
-				calc.average_tax = (calc.income_tax.due() + calc.fica.due() + calc.ltcg.due())
-								 / (inputs.earned_income + inputs.ltcg);
+				calc.total_tax = calc.income_tax.due() + calc.fica.due() + calc.ltcg.due();
+				calc.total_income = inputs.earned_income + inputs.ltcg;
+				calc.average_tax = calc.total_tax / calc.total_income;
 
 			    return calc;
 			};
 			
+			//==============================================================================
 			// Make initial calculated values
 			var calc = calculate(inputs);
 			
