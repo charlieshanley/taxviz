@@ -66,8 +66,10 @@
 			var bar_height = 400;
 			var y_padding = 80;
 			var line_width = 5;
-							
+			
+			//=================================================================
 			// Initialize input object
+			
 			var inputs = {
 			    earned_income: 50000,
 				ltcg: 0,
@@ -89,7 +91,7 @@
 	    		    fica_tax_brackets: [
 	    		        {cap: 118500, rate: 0.0765},
 	    		        {cap: 1000000, rate: 0.0145}
-	    		        ],
+	    		    ],
 	    		    personal_exemption_value: 4050
 	    		},
 				get_taxable_income: function(){
@@ -101,6 +103,7 @@
 				}
 	        };
 			
+			//=================================================================
 			// Utility functions
 			
 			function add(a, b) {
@@ -108,11 +111,11 @@
 			};
 			
 			
-			function get_tax_brackets(taxable_income, brackets) {
-			    var n_brackets = brackets
-			                     .map(function(x) {return (taxable_income > x.cap)})
+			function get_tax_brackets(taxable_income, schedule) {
+			    var n_brackets = schedule
+			                     .map(function(x) { return (taxable_income > x.cap) } )
 			                     .reduce(add, 0);
-			    return brackets.slice(0, n_brackets + 1);
+			    return schedule.slice(0, n_brackets + 1);
 			};
 			
 			function get_tax(taxable_income, brackets) {
@@ -138,40 +141,55 @@
 				return tax;
 			};
 			
-			function get_marginal_tax() {
 			
-			};
-			
-			function get_average_tax() {
-			
-			};
-			
-			
+			//=================================================================
 			// Function to generate calculated values
-			function calculated_values(inputs) {
-			    var calc = new Object();
-			    calc.taxable_income = inputs.get_taxable_income();
-			    calc.income_tax =
-			        get_tax_brackets(calc.taxable_income, inputs.reg.income_tax);
-//			        marginal: ,
-//			        average: ,
-//			        due: };
-			    calc.fica =
-			        get_tax_brackets(inputs.earned_income, inputs.reg.fica_tax);
-//			        marginal: ,
-//			        average:  ,
-//			        due: };
-			    calc.ltcg = 
-			        get_tax_brackets(calc.taxable_income + inputs.ltcg, inputs.reg.ltcg_tax);
-//			        marginal:  ,
-//			        due: };
-//			    calc.net = {
-//			        earned_income: ,
-//			        ltcg: };
-			    
-			    
+			function calculate(inputs) {
+			
+				// constructor for tax object
+				function Tax(taxable_amount, tax_schedule) {
+					this.taxable = taxable_amount;
+					this.schedule = tax_schedule;
+					this.marginal = function() {
+						var brackets = get_tax_brackets(this.taxable, this.schedule);
+						return brackets[brackets.length - 1].rate;
+					}
+					this.due = function() { return get_tax(this.taxable, this.schedule) };
+				}
+				
+				// Object to hold tax objects and to be returned by calculated_values()
+			    var calc = new Object();				
+				calc.income_tax = new Tax(inputs.get_taxable_income(), inputs.reg.income_tax_brackets);
+				calc.fica = new Tax(inputs.earned_income, inputs.reg.fica_tax_brackets);
+				
+				// Note: presently, deductions and exemptions only offset earned income,
+				//		 and do not offset ltcg in the case where deductions + exemptions > earned income.
+				calc.ltcg = {
+					taxable: inputs.ltcg,
+					schedule: inputs.reg.ltcg_tax_brackets,
+					marginal: function() {
+						var brackets = get_tax_brackets(
+							calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule
+						);
+						return brackets[brackets.length - 1].rate;
+					},
+					due: function() {
+						var amount_due =
+							get_tax(calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule)
+							- get_tax(calc.income_tax.taxable, calc.ltcg.schedule);
+						return amount_due;
+					}
+				};
+				
+				calc.average_tax = (calc.income_tax.due() + calc.fica.due() + calc.ltcg.due())
+								 / (inputs.earned_income + inputs.ltcg);
+
 			    return calc;
 			};
+			
+			// Make initial calculated values
+			var calc = calculate(inputs);
+			
 			
 			// Initialize things
             var svg = d3.select("#viz")
@@ -210,7 +228,7 @@
                    .call(yAxis); 
 					
 			    // Recalculate calculated values
-
+				calc = calculate(inputs);
 			}
 							
 			
