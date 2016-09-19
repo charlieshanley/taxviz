@@ -8,9 +8,8 @@
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 		<style>
-			#inputs { float:left; }
+			#text { float:left; width:400px}
 			#viz { padding-left:50px; float:left; }
-			
 			.axis path,
 			.axis line {
 				fill: none;
@@ -21,10 +20,11 @@
                 font-family: sans-serif;
                 font-size: 11px;
             }
+			.tax_types { font-family: sans-serif; font-size: 20px; fill: dimgray; }
 		</style>
     </head>
     <body>
-		<div id="inputs">
+		<div id="text">
 			<h3>Enter info!</h3>
 			<p>
 				<label for="earned_income" 
@@ -157,6 +157,7 @@
 						return brackets[brackets.length - 1].rate;
 					}
 					this.due = function() { return get_tax(this.taxable, this.schedule) };
+					this.average = function() { return this.due / this.taxable };
 				}
 				
 				// Object to hold tax objects and to be returned by calculated_values()
@@ -166,27 +167,26 @@
 				
 				// Note: presently, deductions and exemptions only offset earned income,
 				//		 and do not offset ltcg in the case where deductions + exemptions > earned income.
-				calc.ltcg = {
-					taxable: inputs.ltcg,
-					schedule: inputs.reg.ltcg_tax_brackets,
-					marginal: function() {
-						var brackets = get_tax_brackets(
-							calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule
-						);
-						return brackets[brackets.length - 1].rate;
-					},
-					due: function() {
-						var amount_due =
-							get_tax(calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule)
-							- get_tax(calc.income_tax.taxable, calc.ltcg.schedule);
-						return amount_due;
-					}
+				calc.ltcg = new Tax(inputs.ltcg, inputs.reg.ltcg_tax_brackets);
+				calc.ltcg.marginal = function() {
+					var brackets = get_tax_brackets(
+						calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule
+					);
+					return brackets[brackets.length - 1].rate;
 				};
-				calc.total_tax = calc.income_tax.due() + calc.fica.due() + calc.ltcg.due();
-				calc.total_income = inputs.earned_income + inputs.ltcg;
-				calc.average_tax = calc.total_tax / calc.total_income;
-
-			    return calc;
+				calc.ltcg.due = function() {
+					var amount_due =
+						get_tax(calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule)
+						- get_tax(calc.income_tax.taxable, calc.ltcg.schedule);
+					return amount_due;
+				};
+				
+				calc.total = new Object();
+				calc.total.due = calc.income_tax.due() + calc.fica.due() + calc.ltcg.due();
+				calc.total.effective = calc.total.due / (inputs.earned_income + inputs.ltcg);
+				calc.total.marginal_on_income = calc.income_tax.marginal() + calc.fica.marginal();
+								
+				return calc;
 			};
 			
 			//==============================================================================
@@ -194,7 +194,7 @@
 			var calc = calculate(inputs);
 			
 			
-			// Initialize things
+			// Initialize viz things
             var svg = d3.select("#viz")
 			            .append("svg")
 			            .attr("width", width)
@@ -216,6 +216,36 @@
                .attr("class", "yaxis")
                .attr("transform", "translate("+y_padding+",0)")
                .call(yAxis);
+			   
+			// Text for three tax types
+			var tax_types = {
+				income_tax: {disp: "Income tax", x: 0},
+				fica: {disp: "FICA tax", x: 150},
+				ltcg: {disp: "LTCG tax", x: 300},
+			}
+			var result_text = d3.select("#text").append("svg")
+				.attr("width", 400)
+				.attr("height", 500);
+				
+			result_text.selectAll("g")
+				.data(Object.keys(tax_types))
+				.enter().append("g")
+				.attr("class", "tax_types")
+				
+				.append("rect")
+					.attr({
+						width: 100,
+						height: 30,
+						x: function(d) { return tax_types[d].x },
+						y: 50,
+						rx: 15,
+						ry: 15,
+						fill: "none",
+						stroke: "grey"
+					});
+				//.attr("x", function(d) { return tax_types[d].x })
+				//.attr("y", 50)
+				//.text( function(d) { return tax_types[d].disp } );
 			
 			
 			// Function to regenerate after  values change.
