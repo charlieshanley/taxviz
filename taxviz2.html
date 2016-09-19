@@ -227,11 +227,10 @@
 				.attr("width", 400)
 				.attr("height", 500);
 				
-			result_text.selectAll("g")
+			var round_rects = result_text.selectAll("g")
 				.data(Object.keys(tax_types))
 				.enter().append("g")
 				.attr("class", "tax_types")
-				
 				.append("rect")
 					.attr({
 						width: 100,
