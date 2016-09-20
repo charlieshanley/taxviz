@@ -20,7 +20,8 @@
                 font-family: sans-serif;
                 font-size: 11px;
             }
-			.tax_types { font-family: sans-serif; font-size: 20px; fill: dimgray; }
+			.tax_types { font-family: sans-serif; font-size: 18px; fill: dimgray; }
+			.results { font-family: sans-serif; font-size: 16px; font-weight: bold; fill: dimgray; }
 		</style>
     </head>
     <body>
@@ -202,7 +203,7 @@
 				
 			// Generate scale            
 			var barScale = d3.scale.linear()
-		                       .domain([0, inputs.earned_income * 1.05])
+		                       .domain([0, (inputs.earned_income + inputs.ltcg) * 1.05])
 			    		       .range([bar_height, 0]);
 			
 			// Generate axis and call it on axis group			       
@@ -217,50 +218,104 @@
                .attr("transform", "translate("+y_padding+",0)")
                .call(yAxis);
 			   
-			// Text for three tax types
+			//==============================================================================
+			// Buttons to display calculated values
+			
+			// Text for three tax types buttons
 			var tax_types = {
 				income_tax: {disp: "Income tax", x: 0},
-				fica: {disp: "FICA tax", x: 150},
-				ltcg: {disp: "LTCG tax", x: 300},
+				fica: {disp: "FICA tax", x: 140},
+				ltcg: {disp: "LTCG tax", x: 280},
 			}
+			var button_width = 110;
+			
 			var result_text = d3.select("#text").append("svg")
 				.attr("width", 400)
 				.attr("height", 500);
 				
-			var round_rects = result_text.selectAll("g")
+			var buttons = result_text.selectAll("g")
 				.data(Object.keys(tax_types))
 				.enter().append("g")
-				.attr("class", "tax_types")
-				.append("rect")
+				.attr("class", "tax_types");
+				
+			// Text for buttons
+			buttons.append("text")
+				.attr({
+					x: function(d) { return tax_types[d].x + (button_width / 2) },
+					y: 72,
+					"text-anchor": "middle",
+				})
+				.text( function(d) { return tax_types[d].disp });
+			
+			// Rectangle for buttons with mouseover features
+			buttons.append("rect")
 					.attr({
-						width: 100,
+						width: button_width,
 						height: 30,
 						x: function(d) { return tax_types[d].x },
 						y: 50,
 						rx: 15,
 						ry: 15,
-						fill: "none",
+						fill: "transparent",
 						stroke: "grey"
-					});
-				//.attr("x", function(d) { return tax_types[d].x })
-				//.attr("y", 50)
-				//.text( function(d) { return tax_types[d].disp } );
+					})	
+			// Mouseover feature
+				.on("mouseover", function(d) {
+					d3.select(this)
+						//.transition()
+						.attr("stroke", "black");
+						
+				})
+				.on("mouseout", function(d) {
+					d3.select(this)
+						.transition()
+						.attr("stroke", "grey");
+				});
+				
+				
+			// Function for mouseovers
+			var mouse_feature = function() {
 			
+			};
+			
+			//==============================================================================
+			// Text for calculated values
+			
+			var result_labels = [
+				{disp: "Due:", y: 0},
+				{disp: "Average:", y: 30},
+				{disp: "Marginal:", y: 60},
+				{disp: "Effective tax rate:", y: 110},
+				{disp: "Total tax liability:", y: 140},
+				{disp: "Marginal tax on income:", y: 170}
+			];
+			
+			result_text.append("g")
+				.attr("class", "results")
+				.selectAll("text")
+				.data(result_labels)
+				.enter().append("text")
+				.attr({
+					x: 190,
+					y: function(d) { return d.y + 150 },
+					"text-anchor": "end"
+				})
+				.text( function(d) { return d.disp });
 			
 			// Function to regenerate after  values change.
 			function update(inputs) {
+			
+				// Recalculate calculated values
+				calc = calculate(inputs);
 			 
 			    // Add feature to stop if update called again with x microseconds, so it only begins running when you're done moving inputs.
 			
 			    // Update dollar to pixel scale, then axis
-		        barScale.domain([0, inputs.earned_income * 1.05]);
+		        barScale.domain([0, (inputs.earned_income + inputs.ltcg) * 1.05]);
                 
                 svg.select(".yaxis")
                    .transition().duration(1500).ease("sin-in-out")  // https://github.com/mbostock/d3/wiki/Transitions#wiki-d3_ease
                    .call(yAxis); 
-					
-			    // Recalculate calculated values
-				calc = calculate(inputs);
 			}
 							
 			
