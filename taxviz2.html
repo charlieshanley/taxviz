@@ -20,8 +20,8 @@
                 font-family: sans-serif;
                 font-size: 11px;
             }
-			.tax_types { font-family: sans-serif; font-size: 18px; fill: dimgray; }
-			.results { font-family: sans-serif; font-size: 16px; font-weight: bold; fill: dimgray; }
+			.tax_types { font-family: sans-serif; font-size: 18px; fill: grey; }
+			.results { font-family: arial; font-size: 16px; fill: dimgrey; font-weight: bold; }
 		</style>
     </head>
     <body>
@@ -218,6 +218,7 @@
                .attr("transform", "translate("+y_padding+",0)")
                .call(yAxis);
 			   
+			   
 			//==============================================================================
 			// Buttons to display calculated values
 			
@@ -277,36 +278,89 @@
 			var mouse_feature = function() {
 			
 			};
-			
+
+
 			//==============================================================================
-			// Text for calculated values
+			// Set up display of tax-specific results
 			
-			var result_labels = [
-				{disp: "Due:", y: 0},
+			
+			var spec_result_labels = [
+				{disp: "Marginal:", y: 0},
 				{disp: "Average:", y: 30},
-				{disp: "Marginal:", y: 60},
-				{disp: "Effective tax rate:", y: 110},
-				{disp: "Total tax liability:", y: 140},
-				{disp: "Marginal tax on income:", y: 170}
+				{disp: "Due:", y: 60}
 			];
 			
 			result_text.append("g")
 				.attr("class", "results")
 				.selectAll("text")
-				.data(result_labels)
+				.data(spec_result_labels)
 				.enter().append("text")
 				.attr({
 					x: 190,
 					y: function(d) { return d.y + 150 },
-					"text-anchor": "end"
+					"text-anchor": "end",
+//					"id": function(d) { return d.disp }
 				})
 				.text( function(d) { return d.disp });
+				
+			// Function to re/generate display of tax-specific results
+			var gen_spec_results = function(calc) {
+				r
+					
+			}			
+			
+			//==============================================================================
+			// Set up display of overall results
+			
+			var overall_result_labels = [
+				{y: 110, cl: "marginal_on_income"},
+				{y: 140, cl: "effective"},
+				{y: 170, cl: "due"}
+			];
+			
+			var overall_results = result_text.append("g")
+				.selectAll("text")
+				.data(overall_result_labels)
+				.enter().append("text")
+				.attr({
+					x: 250,
+					y: function(d) { return d.y + 150 },
+					"class": "results",
+					"text-anchor": "end",
+					"id": function(d) { return d.cl }
+				});
+			
+			// Function to re/generate display of overall results
+			var gen_overall_results = function(calc) {
+				d3.select("#marginal_on_income")
+					.text("Marginal tax on income: " + (calc.total.marginal_on_income*100).toFixed(2) + "%" );
+				d3.select("#effective")
+					.text("Effective tax rate: " + (calc.total.effective*100).toFixed(2) + "%" );
+				d3.select("#due")
+					.text("Total tax liability: $" + (calc.total.due).toFixed(2) );
+			}
+			
+			gen_overall_results(calc);
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
 			
 			// Function to regenerate after  values change.
 			function update(inputs) {
 			
 				// Recalculate calculated values
 				calc = calculate(inputs);
+				
+				// Regenerate overall result text
+				gen_overall_results(calc);
 			 
 			    // Add feature to stop if update called again with x microseconds, so it only begins running when you're done moving inputs.
 			
