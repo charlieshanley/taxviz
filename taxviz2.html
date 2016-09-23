@@ -21,7 +21,7 @@
                 font-size: 11px;
             }
 			.tax_types { font-family: sans-serif; font-size: 18px; fill: grey; }
-			.results { font-family: arial; font-size: 16px; fill: dimgrey; font-weight: bold; }
+			.results { font-family: Trebuchet MS; font-size: 16px; fill: dimgrey; font-weight: bold; }
 		</style>
     </head>
     <body>
@@ -158,7 +158,10 @@
 						return brackets[brackets.length - 1].rate;
 					}
 					this.due = function() { return get_tax(this.taxable, this.schedule) };
-					this.average = function() { return this.due / this.taxable };
+					this.average = function() {
+						var val = this.due() / this.taxable
+						return (isNaN(val) ? 0 : val);
+					};
 				}
 				
 				// Object to hold tax objects and to be returned by calculated_values()
@@ -262,15 +265,23 @@
 					})	
 			// Mouseover feature
 				.on("mouseover", function(d) {
+					// highlight button
 					d3.select(this)
 						//.transition()
 						.attr("stroke", "black");
+					// generate text results
+					gen_spec_results(d);
+					// highlight vis elements
 						
 				})
 				.on("mouseout", function(d) {
+					// stop highlighting button
 					d3.select(this)
 						.transition()
 						.attr("stroke", "grey");
+					// remove text results
+					remove_spec_results();
+					// stop highlighting vis elements
 				});
 				
 				
@@ -285,11 +296,12 @@
 			
 			
 			var spec_result_labels = [
-				{disp: "Marginal:", y: 0},
-				{disp: "Average:", y: 30},
-				{disp: "Due:", y: 60}
+				{disp: "Marginal", y: 0},
+				{disp: "Average", y: 30},
+				{disp: "Due", y: 60}
 			];
 			
+			// Text for labels
 			result_text.append("g")
 				.attr("class", "results")
 				.selectAll("text")
@@ -301,13 +313,37 @@
 					"text-anchor": "end",
 //					"id": function(d) { return d.disp }
 				})
-				.text( function(d) { return d.disp });
+				.text( function(d) { return d.disp + ":" });
+				
+			// Text for numbers
+			result_text.append("g")
+				.attr("id", "result_numbers")
+				.attr("class", "results")
+				.selectAll("text")
+				.data(spec_result_labels)
+				.enter().append("text")
+				.attr({
+					x: 200,
+					y: function(d) { return d.y + 150 },
+					"id": function(d) { return d.disp }
+				})
+				.text("");
 				
 			// Function to re/generate display of tax-specific results
-			var gen_spec_results = function(calc) {
-				r
-					
-			}			
+			var gen_spec_results = function(tax) {
+				d3.select("#Marginal")
+					.text( (calc[tax].marginal() * 100).toFixed(2) + "%" );
+				d3.select("#Average")
+					.text( (calc[tax].average() * 100).toFixed(2) + "%" );
+				d3.select("#Due")
+					.text( "$" + calc[tax].due().toFixed(2) );
+			}
+			
+			// Function to remove display of tax-specifc results
+			var remove_spec_results = function() {
+				d3.select("#result_numbers")
+				.selectAll("text").transition().text("")
+				}
 			
 			//==============================================================================
 			// Set up display of overall results
@@ -345,14 +381,8 @@
 			
 			
 			
-			
-			
-			
-			
-			
-			
-			
-			
+
+			//==============================================================================
 			// Function to regenerate after  values change.
 			function update(inputs) {
 			
