@@ -9,20 +9,12 @@
 		<script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 		<style>
+			text, label, h { font-family: Trebuchet MS; }
+			label { font-size: 14px }
 			#text { float:left; width:400px}
 			#viz { padding-left:50px; float:left; }
-			.axis path,
-			.axis line {
-				fill: none;
-				stroke: black;
-				shape-rendering: crispEdges;
-			}
-            .axis text {
-                font-family: sans-serif;
-                font-size: 11px;
-            }
-			.tax_types { font-family: Trebuchet MS; font-size: 18px; fill: grey; }
-			.results { font-family: Trebuchet MS; font-size: 16px; fill: dimgrey; font-weight: bold; }
+			.tax_types { font-size: 18px; fill: grey; }
+			.results { font-size: 16px; }
 		</style>
     </head>
     <body>
@@ -64,15 +56,7 @@
             //==============================================================================
 			//==============================================================================
 
-			
-			// Initial variables
-			var width = 600;
-			var height = 600;
-			var bar_height = 400;
-			var y_padding = 80;
-			var line_width = 5;
-			
-			//==============================================================================
+
 			// Initialize input object
 			
 			var inputs = {
@@ -196,6 +180,16 @@
 			};
 			
 			//==============================================================================
+			
+			// Initial variables
+			var width = 600;
+			var height = 600;
+			var bar_height = 480;
+			var y_padding = 80;
+			var line_width = 5;
+			var orig_opacity = 0.05, highlight_opacity = 0.2;
+
+			
 			// Make initial calculated values
 			var calc = calculate(inputs);
 			
@@ -208,7 +202,7 @@
 				
 			// Generate scale            
 			var barScale = d3.scaleLinear()
-		                       .domain([0, (inputs.earned_income + inputs.ltcg) * 1.05])
+		                       .domain([0, (inputs.earned_income + inputs.ltcg) * 1.1])
 			    		       .range([bar_height, 0]);
 			var yAxis = d3.axisLeft(barScale).ticks(5);
 			
@@ -218,15 +212,59 @@
                .attr("transform", "translate("+y_padding+",0)")
                .call(yAxis);
 			   
+			// transition settings to use for multiple objects
+			var t = function(transition) {
+				transition.duration(1200).ease(d3.easeCubicInOut);
+			}
+			
+			//==============================================================================
+			// Bars to visualize income and taxes
+			 
+			// Make earned income and ltcg bars
+			var income_bar_dat = [
+				{key: "earned_income", color: "green", offset: function() { return 0 } },
+				{key:"ltcg", color: "lightseagreen", offset: function() { return inputs.earned_income } }
+			];
+			 
+			var income_bars = svg.append("g")
+				.attr("id", "income_bars")
+				.selectAll("rect")
+				.data(income_bar_dat);
+				
+			var original = income_bars
+				.enter().append("rect")
+				.attrs({
+					"id": function(d) { return d.key + "_bar" },
+					x: 100,
+					width: 20,
+					stroke: function(d) { return d.color },
+					fill: function(d) { return d.color },
+					"fill-opacity": orig_opacity
+				})
+			 
+			// Make tax bars
+			   
+			
+			// function to regenerate income bars and tax barScale
+			var regen_bars = function() {
+				income_bars
+					.merge(original)
+					.transition().call(t)
+					.attrs({
+						y: function(d) { return barScale( inputs[d.key] + d.offset() ) },
+						height: function(d) { return (barScale(0) - barScale( inputs[d.key] )) }
+					});
+			}
+			regen_bars();
 			   
 			//==============================================================================
 			// Buttons to display calculated values
 			
 			// Text for three tax types buttons
 			var tax_types = {
-				income_tax: {disp: "Income tax", x: 0},
-				fica: {disp: "FICA tax", x: 140},
-				ltcg: {disp: "LTCG tax", x: 280},
+				income_tax: {disp: "Income tax", x: 0, inc_bar: "#earned_income_bar"},
+				fica: {disp: "FICA tax", x: 140, inc_bar: "#earned_income_bar"},
+				ltcg: {disp: "LTCG tax", x: 280, inc_bar: "#ltcg_bar"},
 			}
 			var button_width = 110;
 			
@@ -269,7 +307,7 @@
 					// generate text results
 					gen_spec_results(d);
 					// highlight vis elements
-						
+					mouse_on(d);
 				})
 				.on("mouseout", function(d) {
 					// stop highlighting button
@@ -279,13 +317,21 @@
 					// remove text results
 					remove_spec_results();
 					// stop highlighting vis elements
+					mouse_off(d);
 				});
 				
 				
-			// Function for mouseovers
-			var mouse_feature = function() {
-			
-			};
+			// Functions for mouseovers
+			var mouse_on = function(d) {
+				d3.select(tax_types[d].inc_bar)
+					//.transition()
+					.attr("fill-opacity", highlight_opacity);
+			}
+			var mouse_off = function(d) {
+				d3.select(tax_types[d].inc_bar)
+					//.transition().duration(100)
+					.attr("fill-opacity", orig_opacity)
+			}
 
 
 			//==============================================================================
@@ -339,7 +385,7 @@
 			// Function to remove display of tax-specifc results
 			var remove_spec_results = function() {
 				d3.select("#result_numbers")
-				.selectAll("text").transition().text("")
+				.selectAll("text").text("")
 				}
 			
 			//==============================================================================
@@ -395,8 +441,11 @@
 		        barScale.domain([0, (inputs.earned_income + inputs.ltcg) * 1.05]);
                 
                 svg.select(".yaxis")
-                   .transition().duration(1200).ease(d3.easeCubicInOut)  // https://github.com/mbostock/d3/wiki/Transitions#wiki-d3_ease
-                   .call(yAxis); 
+                   .transition().call(t)  // https://github.com/mbostock/d3/wiki/Transitions#wiki-d3_ease
+                   .call(yAxis);
+				   
+				// Regenerate bars
+				regen_bars();
 			}
 							
 			
