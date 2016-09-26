@@ -5,7 +5,8 @@
         <meta charset="utf-8">
 		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 		<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+		<script src="https://d3js.org/d3.v4.js"></script>
+		<script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 		<style>
 			#text { float:left; width:400px}
@@ -20,7 +21,7 @@
                 font-family: sans-serif;
                 font-size: 11px;
             }
-			.tax_types { font-family: sans-serif; font-size: 18px; fill: grey; }
+			.tax_types { font-family: Trebuchet MS; font-size: 18px; fill: grey; }
 			.results { font-family: Trebuchet MS; font-size: 16px; fill: dimgrey; font-weight: bold; }
 		</style>
     </head>
@@ -62,6 +63,7 @@
         <script type="text/javascript">
             //==============================================================================
 			//==============================================================================
+
 			
 			// Initial variables
 			var width = 600;
@@ -205,17 +207,12 @@
 			            .attr("height", height);
 				
 			// Generate scale            
-			var barScale = d3.scale.linear()
+			var barScale = d3.scaleLinear()
 		                       .domain([0, (inputs.earned_income + inputs.ltcg) * 1.05])
 			    		       .range([bar_height, 0]);
+			var yAxis = d3.axisLeft(barScale).ticks(5);
 			
 			// Generate axis and call it on axis group			       
-			var yAxis = d3.svg.axis()
-			            .orient("left")
-			            .ticks(5)
-			            .scale(barScale)
-			            .tickSize(-width, 1, 1)//.tickFormat("")
-			            ;
 			svg.append("g")
                .attr("class", "yaxis")
                .attr("transform", "translate("+y_padding+",0)")
@@ -244,16 +241,16 @@
 				
 			// Text for buttons
 			buttons.append("text")
-				.attr({
+				.attrs({
 					x: function(d) { return tax_types[d].x + (button_width / 2) },
 					y: 72,
-					"text-anchor": "middle",
+					"text-anchor": "middle"
 				})
 				.text( function(d) { return tax_types[d].disp });
 			
 			// Rectangle for buttons with mouseover features
 			buttons.append("rect")
-					.attr({
+					.attrs({
 						width: button_width,
 						height: 30,
 						x: function(d) { return tax_types[d].x },
@@ -307,7 +304,7 @@
 				.selectAll("text")
 				.data(spec_result_labels)
 				.enter().append("text")
-				.attr({
+				.attrs({
 					x: 190,
 					y: function(d) { return d.y + 150 },
 					"text-anchor": "end",
@@ -322,7 +319,7 @@
 				.selectAll("text")
 				.data(spec_result_labels)
 				.enter().append("text")
-				.attr({
+				.attrs({
 					x: 200,
 					y: function(d) { return d.y + 150 },
 					"id": function(d) { return d.disp }
@@ -358,7 +355,7 @@
 				.selectAll("text")
 				.data(overall_result_labels)
 				.enter().append("text")
-				.attr({
+				.attrs({
 					x: 250,
 					y: function(d) { return d.y + 150 },
 					"class": "results",
@@ -398,7 +395,7 @@
 		        barScale.domain([0, (inputs.earned_income + inputs.ltcg) * 1.05]);
                 
                 svg.select(".yaxis")
-                   .transition().duration(1500).ease("sin-in-out")  // https://github.com/mbostock/d3/wiki/Transitions#wiki-d3_ease
+                   .transition().duration(1200).ease(d3.easeCubicInOut)  // https://github.com/mbostock/d3/wiki/Transitions#wiki-d3_ease
                    .call(yAxis); 
 			}
 							
