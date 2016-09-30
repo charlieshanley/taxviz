@@ -139,11 +139,9 @@
 				function Tax(taxable_amount, tax_schedule) {
 					this.taxable = taxable_amount;
 					this.schedule = tax_schedule;
-					this.marginal = function() {
-						var brackets = get_tax_brackets(this.taxable, this.schedule);
-						return brackets[brackets.length - 1].rate;
-					}
-					this.due = function() { return get_tax(this.taxable, this.schedule) };
+					this.brackets = get_tax_brackets(this.taxable, this.schedule);
+					this.marginal = this.brackets[this.brackets.length - 1].rate;
+					this.due = get_tax(this.taxable, this.schedule);
 					this.average = function() {
 						var val = this.due() / this.taxable
 						return (isNaN(val) ? 0 : val);
@@ -243,9 +241,12 @@
 				})
 			 
 			// Make tax bars
-			   
+			var make_tax_bars = function(tax, xpos) {
+			    var brackets = get_tax_brackets(tax.taxable, tax.schedule);
+			    
+			}
 			
-			// function to regenerate income bars and tax barScale
+			// function to regenerate income bars and tax bars
 			var regen_bars = function() {
 				income_bars
 					.merge(original)
