@@ -1,0 +1,6 @@
+text, label, h { font-family: Trebuchet MS; }
+label { font-size: 14px }
+#text { float:left; width:400px}
+#viz { padding-left:50px; float:left; }
+.tax_types { font-size: 18px; fill: grey; }
+.results { font-size: 16px; }
