@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+		<!-- <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>  -->
+		<script src="https://d3js.org/d3.v4.js"></script>
+		<script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+		<!-- <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css"> -->
+		<link rel="stylesheet" href="./style.css">
+		<script type="text/javascript" src="script.js"></script>
+    </head>
+	
+    <body>
+		<div id="text_io">
+			<h3>Enter information</h3>
+			<div class="inputs">
+				<div class="input">
+					<label for=filing_status>Filing status</label>
+					<select id=filing_status>
+						<option value="single">Single</option>
+						<option value="mfj">Married filing jointly</option>
+						<option value="mfs">Married filing separately</option>
+						<option value="hoh">Head of household</option>
+					</select>
+				</div>
+				<div class="input">
+					<label for=earned_income>Earned income</label>
+					<input type="number" min="20000" max="500000" step="1000" value="50000" id="earned_income">
+				</div>
+				<div class="input">
+					<label for=ltcg>Long-term capital gains</label>
+					<input type="number" min="0" max="500000" step="1000" value="0" id="ltcg">
+				</div>
+				<div class="input">
+					<label for=exemptions>Personal exemptions</label>
+					<input type="number" min="0" max="10" step="1" value="1" id="exemptions">
+				</div>
+				<div class="input">
+					<label for=deductions>Deductions</label>
+					<input type="number" min="6300" max="500000" step="100" value="6300" id="deductions">
+				</div>
+			</div>
+			
+			
+		</div>
+		<div id="viz">
+		</div>
+    </body>
+</html>

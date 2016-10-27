@@ -1,6 +1,25 @@
-text, label, h { font-family: Trebuchet MS; }
-label { font-size: 14px }
-#text { float:left; width:400px}
-#viz { padding-left:50px; float:left; }
-.tax_types { font-size: 18px; fill: grey; }
-.results { font-size: 16px; }
+
+body {
+	font-family: 'Lato', sans-serif;
+}
+.input label {
+	display: inline-block;
+	width: 160px;
+	text-align: right;
+	font-size: 14px;
+	margin-top: 5px;
+}
+
+#text_io {
+	float:left; width:400px
+}
+#viz {
+	padding:50px;
+	float:left;
+}
+.tax_types {
+	font-size: 18px; fill: grey;
+}
+.results {
+	font-size: 16px;
+}
