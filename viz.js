@@ -1,46 +1,7 @@
 //Charlie Hanley, October 2016
 
 
-//=============================================================================
-// Initialize input object
-
-var inputs = {
-	earned_income: 50000,
-	ltcg: 0,
-	exemptions: 1,
-	deductions: 6300,
-	// Set static tax values object
-	reg: {
-		income_tax_brackets: [
-			{cap: 9275, rate: 0.10},
-			{cap: 37650, rate: 0.15},
-			{cap: 91150, rate: 0.25},
-			{cap: 190150, rate: 0.28},
-			{cap: 413350, rate: 0.33}
-		],
-		ltcg_tax_brackets: [
-			{cap: 37650, rate: 0},
-			{cap: 413350, rate: 0.15}
-		],
-		fica_tax_brackets: [
-			{cap: 118500, rate: 0.0765},
-			{cap: 1000000, rate: 0.0145}
-		],
-		personal_exemption_value: 4050
-	},
-	get_taxable_income: function(){
-		return Math.max(
-			this.earned_income
-			- this.deductions
-			- (this.exemptions * this.reg.personal_exemption_value),
-			0);
-	}
-};
-
-
-
-
-
+//==============================================================================
 // Initial variables
 var width = 600;
 var height = 600;
@@ -55,19 +16,18 @@ var calc = calculate(inputs);
 
 
 
-
+//==============================================================================
+// Manipulation of the DOM should occur after the document is loaded
 $(document).ready( function() {
 	
 	
-	
-	//==============================================================================	
-	
+	//==============================================================================
 	// Initialize viz things
 	var svg = d3.select("#viz")
 				.append("svg")
 				.attr("width", width)
 				.attr("height", height);
-		
+						
 	// Generate scale            
 	var barScale = d3.scaleLinear()
 					.domain([0, (inputs.earned_income + inputs.ltcg) * 1.1])
@@ -321,7 +281,39 @@ $(document).ready( function() {
 					
 	
 	//=================================================================			
-	// On input, update variables and regenerate
+	// button press, update variables and regenerate
+	
+	function valid_inputs(inp){
+		if (inp.deductions >= 6300 && inp.deductions <= 200000 &&
+			inp.earned_income >= 20000 && inp.earned_income <= 200000 &&
+			inp.ltcg >= 0 && inp.ltcg <= 200000 &&
+			inp.exemptions >= 0 && inp.exemptions <= 10) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	function reassign_inputs(){
+		inputs['filing_status'] = $('#filing_status').val();
+		var input_names = ['earned_income', 'ltcg', 'deductions', 'exemptions']
+		for (n = 0; n < 4; n++) {
+			inputs[input_names[n]] = parseFloat($('#' + input_names[n]).val());
+		}
+	}
+	
+	$('#submit').button();
+	$('#invalid_input').popup( {opacity: 0.3, transition: 'all 0.3s'});
+
+	$('#submit').click( function() {
+		reassign_inputs();
+		if (!valid_inputs(inputs)) {
+			$('#invalid_input').popup('show');
+		} else {
+			update(inputs);
+		}
+	});
+/*
 	d3.select("#earned_income").on("input", function() {
 		inputs.earned_income = +this.value;
 		update(inputs);
@@ -338,6 +330,6 @@ $(document).ready( function() {
 		inputs.deductions = +this.value;
 		update(inputs);
 		});
-		
+*/
 });
 

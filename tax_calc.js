@@ -20,7 +20,7 @@ var tax_schedule = {
 		]
 	},
 	
-	"married_filing_jointly": {
+	"mfj": {
 		"income_tax_brackets": [
 			{"cap": 18550, "rate": 0.10},
 			{"cap": 75300, "rate": 0.15},
@@ -38,7 +38,7 @@ var tax_schedule = {
 		]
 	},
 	
-	"married_filing_separately": {
+	"mfs": {
 		"income_tax_brackets": [
 			{"cap": 9275, "rate": 0.10},
 			{"cap": 37650, "rate": 0.15},
@@ -56,7 +56,7 @@ var tax_schedule = {
 		]
 	},
 	
-	"head_of_household": {
+	"hoh": {
 		"income_tax_brackets": [
 			{"cap": 13250, "rate": 0.10},
 			{"cap": 50400, "rate": 0.15},
@@ -75,13 +75,34 @@ var tax_schedule = {
 	}
 };
 
+
+//=============================================================================
+// Initialize input object
+
+var inputs = {
+	filing_status: 'single',
+	earned_income: 50000,
+	ltcg: 0,
+	deductions: 6300,
+	exemptions: 1,
+	personal_exemption_value: 4050,
+	get_sched: function() { return tax_schedule[this.filing_status] },
+	get_taxable_income: function(){
+		return Math.max(
+			this.earned_income
+			- this.deductions
+			- (this.exemptions * this.personal_exemption_value),
+			0);
+	}
+};
+
+
 //==============================================================================
 // Utility functions to calculate taxes
 
 function add(a, b) {
 	return a + b;
 };
-
 
 function get_tax_brackets(taxable_income, schedule) {
 	var n_brackets = schedule
@@ -132,12 +153,12 @@ function calculate(inputs) {
 	
 	// Object to hold tax objects and to be returned by calculated_values()
 	var calc = new Object();				
-	calc.income_tax = new Tax(inputs.get_taxable_income(), inputs.reg.income_tax_brackets);
-	calc.fica = new Tax(inputs.earned_income, inputs.reg.fica_tax_brackets);
+	calc.income_tax = new Tax(inputs.get_taxable_income(), inputs.get_sched().income_tax_brackets);
+	calc.fica = new Tax(inputs.earned_income, inputs.get_sched().fica_tax_brackets);
 	
 	// Note: presently, deductions and exemptions only offset earned income,
 	//		 and do not offset ltcg in the case where deductions + exemptions > earned income.
-	calc.ltcg = new Tax(inputs.ltcg, inputs.reg.ltcg_tax_brackets);
+	calc.ltcg = new Tax(inputs.ltcg, inputs.get_sched().ltcg_tax_brackets);
 	calc.ltcg.marginal = function() {
 		var brackets = get_tax_brackets(
 			calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule
@@ -155,3 +176,4 @@ function calculate(inputs) {
 					
 	return calc;
 };
+
