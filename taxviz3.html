@@ -8,7 +8,8 @@
 		<script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
 		<!-- <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css"> -->
 		<link rel="stylesheet" href="./style.css">
-		<script type="text/javascript" src="script.js"></script>
+		<script type="text/javascript" src="tax_calc.js"></script>
+		<script type="text/javascript" src="viz.js"></script>
     </head>
 	
     <body>
@@ -33,12 +34,12 @@
 					<input type="number" min="0" max="500000" step="1000" value="0" id="ltcg">
 				</div>
 				<div class="input">
-					<label for=exemptions>Personal exemptions</label>
-					<input type="number" min="0" max="10" step="1" value="1" id="exemptions">
-				</div>
-				<div class="input">
 					<label for=deductions>Deductions</label>
 					<input type="number" min="6300" max="500000" step="100" value="6300" id="deductions">
+				</div>
+				<div class="input">
+					<label for=exemptions>Personal exemptions</label>
+					<input type="number" min="0" max="10" step="1" value="1" id="exemptions">
 				</div>
 			</div>
 			

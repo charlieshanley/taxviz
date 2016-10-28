@@ -28,7 +28,7 @@
 			{"cap": 413350, "rate": 0.33}
 		],
 		"ltcg_tax_brackets": [
-			{"cap": 37650, "rate": 0},
+			{"cap": 75300, "rate": 0},
 			{"cap": 413350, "rate": 0.15}
 		],
 		"fica_tax_brackets": [
@@ -64,7 +64,7 @@
 			{"cap": 413350, "rate": 0.33}
 		],
 		"ltcg_tax_brackets": [
-			{"cap": 37650, "rate": 0},
+			{"cap": 50400, "rate": 0},
 			{"cap": 413350, "rate": 0.15}
 		],
 		"fica_tax_brackets": [
