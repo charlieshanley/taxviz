@@ -46,6 +46,168 @@ $(document).ready( function() {
 	}
 	
 	//==============================================================================
+	// Buttons to display calculated values
+	
+	// Text for three tax types buttons
+	var tax_types = {
+		income_tax: {disp: "Income tax", y: 0, inc_bar: "#earned_income_bar"},
+		fica: {disp: "FICA tax", y: 50, inc_bar: "#earned_income_bar"},
+		ltcg: {disp: "LTCG tax", y: 100, inc_bar: "#ltcg_bar"},
+	}
+	
+	var result_text = d3.select("#text_io").append("svg")
+		.attr("width", 400)
+		.attr("height", 500);
+		
+	var button_width = 110;
+	var button_height = 30;
+	var button_xoffset = 85;
+	var button_yoffset = 80;
+		
+	var buttons = result_text.selectAll("g")
+		.data(Object.keys(tax_types))
+		.enter().append("g")
+		.attr("class", "tax_types");
+		
+	// Text for buttons
+	buttons.append("text")
+		.attrs({
+			x: button_xoffset,
+			y: function(d) { return tax_types[d].y + button_yoffset },
+			"text-anchor": "middle"
+		})
+		.text( function(d) { return tax_types[d].disp });
+	
+	// Rectangle for buttons with mouseover features
+	buttons.append("rect")
+			.attrs({
+				width: button_width,
+				height: button_height,
+				x: button_xoffset - button_width/2,
+				y: function(d) { return tax_types[d].y + button_yoffset - button_height/2 - 5  },
+				rx: 15,
+				ry: 15,
+				fill: "transparent",
+				stroke: "grey"
+			})	
+	// Mouseover feature
+		.on("mouseover", function(d) {
+			// highlight button
+			d3.select(this)
+				//.transition()
+				.attr("stroke", "black");
+			// generate text results
+			gen_spec_results(d);
+			// highlight vis elements
+			mouse_on(d);
+		})
+		.on("mouseout", function(d) {
+			// stop highlighting button
+			d3.select(this)
+				.transition()
+				.attr("stroke", "grey");
+			// remove text results
+			d3.selectAll(".result_numbers").text("");
+			// stop highlighting vis elements
+			mouse_off(d);
+		});
+		
+		
+	// Functions for mouseovers
+	var mouse_on = function(d) {
+		d3.select(tax_types[d].inc_bar)
+			//.transition()
+			.attr("fill-opacity", highlight_opacity);
+	}
+	var mouse_off = function(d) {
+		d3.select(tax_types[d].inc_bar)
+			//.transition().duration(100)
+			.attr("fill-opacity", orig_opacity)
+	}
+	
+	
+	//==============================================================================
+	// Set up display of tax-specific results
+	
+	
+	var spec_result_labels = [
+		{disp: "Marginal", y: 0},
+		{disp: "Average", y: 50},
+		{disp: "Due", y: 100}
+	];
+	
+	var spec_results = result_text.append("g")
+		.attr("class", "results")
+		.selectAll("text")
+		.data(spec_result_labels);
+	
+	var spec_result_x = button_xoffset + button_width/2 + 120;
+		
+	// Text for labels
+	spec_results.enter().append("text")
+		.attrs({
+			x: spec_result_x - 10,
+			y: function(d) { return d.y + button_yoffset },
+			"text-anchor": "end"
+		})
+		.text( function(d) { return d.disp + ":" });
+		
+	// Text for numbers
+	spec_results.enter().append("text")
+		.attrs({
+			x: spec_result_x + 10,
+			y: function(d) { return d.y + button_yoffset },
+			"id": function(d) { return d.disp },
+			"class": "result_numbers"
+		})
+		.text("");
+		
+	// Function to re/generate display of tax-specific results
+	var gen_spec_results = function(tax) {
+		d3.select("#Marginal")
+			.text( (calc[tax].marginal * 100).toFixed(2) + "%" );
+		d3.select("#Average")
+			.text( (calc[tax].average() * 100).toFixed(2) + "%" );
+		d3.select("#Due")
+			.text( "$" + calc[tax].due.toFixed(2) );
+	}
+	
+	//==============================================================================
+	// Set up display of overall results
+	
+	var overall_result_labels = [
+		{y: 110, cl: "marginal_on_income"},
+		{y: 140, cl: "effective"},
+		{y: 170, cl: "due"}
+	];
+	
+	var overall_results = result_text.append("g")
+		.selectAll("text")
+		.data(overall_result_labels)
+		.enter().append("text")
+		.attrs({
+			x: 250,
+			y: function(d) { return d.y + 150 },
+			"class": "results",
+			"text-anchor": "end",
+			"id": function(d) { return d.cl }
+		});
+	
+	// Function to re/generate display of overall results
+	var gen_overall_results = function(calc) {
+		d3.select("#marginal_on_income")
+			.text("Marginal tax on income: " + (calc.total.marginal_on_income*100).toFixed(2) + "%" );
+		d3.select("#effective")
+			.text("Effective tax rate: " + (calc.total.effective*100).toFixed(2) + "%" );
+		d3.select("#due")
+			.text("Total tax liability: $" + (calc.total.due).toFixed(2) );
+	}
+	
+	gen_overall_results(calc);
+	
+	
+	
+	//==============================================================================
 	// Bars to visualize income and taxes
 	
 	// Make earned income and ltcg bars
@@ -88,200 +250,24 @@ $(document).ready( function() {
 	}
 	regen_bars();
 	
-	//==============================================================================
-	// Buttons to display calculated values
-	
-	// Text for three tax types buttons
-	var tax_types = {
-		income_tax: {disp: "Income tax", x: 0, inc_bar: "#earned_income_bar"},
-		fica: {disp: "FICA tax", x: 140, inc_bar: "#earned_income_bar"},
-		ltcg: {disp: "LTCG tax", x: 280, inc_bar: "#ltcg_bar"},
-	}
-	var button_width = 110;
-	
-	var result_text = d3.select("#text").append("svg")
-		.attr("width", 400)
-		.attr("height", 500);
-		
-	var buttons = result_text.selectAll("g")
-		.data(Object.keys(tax_types))
-		.enter().append("g")
-		.attr("class", "tax_types");
-		
-	// Text for buttons
-	buttons.append("text")
-		.attrs({
-			x: function(d) { return tax_types[d].x + (button_width / 2) },
-			y: 72,
-			"text-anchor": "middle"
-		})
-		.text( function(d) { return tax_types[d].disp });
-	
-	// Rectangle for buttons with mouseover features
-	buttons.append("rect")
-			.attrs({
-				width: button_width,
-				height: 30,
-				x: function(d) { return tax_types[d].x },
-				y: 50,
-				rx: 15,
-				ry: 15,
-				fill: "transparent",
-				stroke: "grey"
-			})	
-	// Mouseover feature
-		.on("mouseover", function(d) {
-			// highlight button
-			d3.select(this)
-				//.transition()
-				.attr("stroke", "black");
-			// generate text results
-			gen_spec_results(d);
-			// highlight vis elements
-			mouse_on(d);
-		})
-		.on("mouseout", function(d) {
-			// stop highlighting button
-			d3.select(this)
-				.transition()
-				.attr("stroke", "grey");
-			// remove text results
-			remove_spec_results();
-			// stop highlighting vis elements
-			mouse_off(d);
-		});
-		
-		
-	// Functions for mouseovers
-	var mouse_on = function(d) {
-		d3.select(tax_types[d].inc_bar)
-			//.transition()
-			.attr("fill-opacity", highlight_opacity);
-	}
-	var mouse_off = function(d) {
-		d3.select(tax_types[d].inc_bar)
-			//.transition().duration(100)
-			.attr("fill-opacity", orig_opacity)
-	}
-	
-	
-	//==============================================================================
-	// Set up display of tax-specific results
-	
-	
-	var spec_result_labels = [
-		{disp: "Marginal", y: 0},
-		{disp: "Average", y: 30},
-		{disp: "Due", y: 60}
-	];
-	
-	// Text for labels
-	result_text.append("g")
-		.attr("class", "results")
-		.selectAll("text")
-		.data(spec_result_labels)
-		.enter().append("text")
-		.attrs({
-			x: 190,
-			y: function(d) { return d.y + 150 },
-			"text-anchor": "end",
-			"id": function(d) { return d.disp }
-		})
-		.text( function(d) { return d.disp + ":" });
-		
-	// Text for numbers
-	result_text.append("g")
-		.attr("id", "result_numbers")
-		.attr("class", "results")
-		.selectAll("text")
-		.data(spec_result_labels)
-		.enter().append("text")
-		.attrs({
-			x: 200,
-			y: function(d) { return d.y + 150 },
-			"id": function(d) { return d.disp }
-		})
-		.text("");
-		
-	// Function to re/generate display of tax-specific results
-	var gen_spec_results = function(tax) {
-		d3.select("#Marginal")
-			.text( (calc[tax].marginal * 100).toFixed(2) + "%" );
-		d3.select("#Average")
-			.text( (calc[tax].average() * 100).toFixed(2) + "%" );
-		d3.select("#Due")
-			.text( "$" + calc[tax].due.toFixed(2) );
-	}
-	
-	// Function to remove display of tax-specifc results
-	var remove_spec_results = function() {
-		d3.select("#result_numbers")
-		.selectAll("text").text("")
-		}
-	
-	//==============================================================================
-	// Set up display of overall results
-	
-	var overall_result_labels = [
-		{y: 110, cl: "marginal_on_income"},
-		{y: 140, cl: "effective"},
-		{y: 170, cl: "due"}
-	];
-	
-	var overall_results = result_text.append("g")
-		.selectAll("text")
-		.data(overall_result_labels)
-		.enter().append("text")
-		.attrs({
-			x: 250,
-			y: function(d) { return d.y + 150 },
-			"class": "results",
-			"text-anchor": "end",
-			"id": function(d) { return d.cl }
-		});
-	
-	// Function to re/generate display of overall results
-	var gen_overall_results = function(calc) {
-		d3.select("#marginal_on_income")
-			.text("Marginal tax on income: " + (calc.total.marginal_on_income*100).toFixed(2) + "%" );
-		d3.select("#effective")
-			.text("Effective tax rate: " + (calc.total.effective*100).toFixed(2) + "%" );
-		d3.select("#due")
-			.text("Total tax liability: $" + (calc.total.due).toFixed(2) );
-	}
-	
-	gen_overall_results(calc);
-	
-	
-	
-	
+
 	
 	//==============================================================================
 	// Function to regenerate after  values change.
 	function update(inputs) {
-	
 		// Recalculate calculated values
 		calc = calculate(inputs);
-		
 		// Regenerate overall result text
-		gen_overall_results(calc);
-	
-		// Add feature to stop if update called again with x microseconds, so it only begins running when you're done moving inputs.
-	
-		// Update dollar to pixel scale, then axis
-		barScale.domain([0, (inputs.earned_income + inputs.ltcg) * 1.05]);
-		
-		svg.select(".yaxis")
-		.transition().call(t)  // https://github.com/mbostock/d3/wiki/Transitions#wiki-d3_ease
-		.call(yAxis);
-		
+		gen_overall_results(calc);	
+		// Update dollar to pixel scale, then update axis
+		barScale.domain([0, (inputs.earned_income + inputs.ltcg) * 1.05]);	
+		svg.select(".yaxis").transition().call(t).call(yAxis);
 		// Regenerate bars
 		regen_bars();
 	}
-					
 	
 	//=================================================================			
-	// button press, update variables and regenerate
+	// When 'submit' button is pressed, update variables and regenerate
 	
 	function valid_inputs(inp){
 		if (inp.deductions >= 6300 && inp.deductions <= 200000 &&
@@ -307,10 +293,10 @@ $(document).ready( function() {
 
 	$('#submit').click( function() {
 		reassign_inputs();
-		if (!valid_inputs(inputs)) {
-			$('#invalid_input').popup('show');
-		} else {
+		if (valid_inputs(inputs)) {
 			update(inputs);
+		} else {
+			$('#invalid_input').popup('show');
 		}
 	});
 /*

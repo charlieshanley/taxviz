@@ -143,10 +143,10 @@ function calculate(inputs) {
 		this.taxable = taxable_amount;
 		this.schedule = tax_schedule;
 		this.brackets = get_tax_brackets(this.taxable, this.schedule);
-		this.marginal = this.brackets[this.brackets.length - 1].rate;
+		this.marginal = function(){ return this.brackets[this.brackets.length - 1].rate; };
 		this.due = get_tax(this.taxable, this.schedule);
 		this.average = function() {
-			var val = this.due() / this.taxable
+			var val = this.due / this.taxable
 			return (isNaN(val) ? 0 : val);
 		};
 	}
