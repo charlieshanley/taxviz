@@ -142,9 +142,9 @@ function calculate(inputs) {
 	function Tax(taxable_amount, tax_schedule) {
 		this.taxable = taxable_amount;
 		this.schedule = tax_schedule;
-		this.brackets = get_tax_brackets(this.taxable, this.schedule);
+		this.brackets = get_tax_brackets(taxable_amount, tax_schedule);
 		this.marginal = function(){ return this.brackets[this.brackets.length - 1].rate; };
-		this.due = get_tax(this.taxable, this.schedule);
+		this.due = get_tax(taxable_amount, tax_schedule);
 		this.average = function() {
 			var val = this.due / this.taxable
 			return (isNaN(val) ? 0 : val);
@@ -158,13 +158,9 @@ function calculate(inputs) {
 	
 	// Note: presently, deductions and exemptions only offset earned income,
 	//		 and do not offset ltcg in the case where deductions + exemptions > earned income.
+	
 	calc.ltcg = new Tax(inputs.ltcg, inputs.get_sched().ltcg_tax_brackets);
-	calc.ltcg.marginal = function() {
-		var brackets = get_tax_brackets(
-			calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule
-		);
-		return brackets[brackets.length - 1].rate;
-	};
+	calc.ltcg.brackets = get_tax_brackets(calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule);
 	calc.ltcg.due = 
 		get_tax(calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule)
 		- get_tax(calc.income_tax.taxable, calc.ltcg.schedule);
@@ -172,7 +168,7 @@ function calculate(inputs) {
 	calc.total = new Object();
 	calc.total.due = calc.income_tax.due + calc.fica.due + calc.ltcg.due;
 	calc.total.effective = calc.total.due / (inputs.earned_income + inputs.ltcg);
-	calc.total.marginal_on_income = calc.income_tax.marginal + calc.fica.marginal;
+	calc.total.marginal_on_income = calc.income_tax.marginal() + calc.fica.marginal();
 					
 	return calc;
 };

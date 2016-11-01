@@ -55,14 +55,14 @@ $(document).ready( function() {
 		ltcg: {disp: "LTCG tax", y: 100, inc_bar: "#ltcg_bar"},
 	}
 	
-	var result_text = d3.select("#text_io").append("svg")
-		.attr("width", 400)
-		.attr("height", 500);
+	var result_text = d3.select("#text_io")
+		.append("div").attr("id", "results")
+		.append("svg").attr("width", 380).attr("height", 300);
 		
 	var button_width = 110;
 	var button_height = 30;
 	var button_xoffset = 85;
-	var button_yoffset = 80;
+	var button_yoffset = 30;
 		
 	var buttons = result_text.selectAll("g")
 		.data(Object.keys(tax_types))
@@ -165,7 +165,7 @@ $(document).ready( function() {
 	// Function to re/generate display of tax-specific results
 	var gen_spec_results = function(tax) {
 		d3.select("#Marginal")
-			.text( (calc[tax].marginal * 100).toFixed(2) + "%" );
+			.text( (calc[tax].marginal() * 100).toFixed(2) + "%" );
 		d3.select("#Average")
 			.text( (calc[tax].average() * 100).toFixed(2) + "%" );
 		d3.select("#Due")
@@ -187,7 +187,7 @@ $(document).ready( function() {
 		.enter().append("text")
 		.attrs({
 			x: 250,
-			y: function(d) { return d.y + 150 },
+			y: function(d) { return d.y + 100 },
 			"class": "results",
 			"text-anchor": "end",
 			"id": function(d) { return d.cl }

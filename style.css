@@ -6,13 +6,14 @@ body {
 	position: relative;
 	right: -6rem;
 }
-.inputs{
+#inputs, #results{
 	border-style: solid;
 	border-width: 2px;
 	border-radius:10px;
 	padding: 15px;
+	margin-bottom: 30px;
 }
-.inputs label {
+#inputs label {
 	display: inline-block;
 	width: 160px;
 	text-align: right;
