@@ -233,10 +233,23 @@ $(document).ready( function() {
 		})
 	
 	// Make tax bars
-	var make_tax_bars = function(tax, xpos) {
-		var brackets = get_tax_brackets(tax.taxable, tax.schedule);
-		
+	var make_tax_bars = function(tax_name, xpos) {
+		var bar = d3.select('#viz > svg').append('g').attr('id', tax_name);
+		var tax = calc[tax_name];
+		bar.selectAll('line').data(tax.brackets)
+			.enter().append('line')
+			.attrs({
+				'x1': xpos - 10,
+				'x2': xpos + 10,
+				'y1': function(d) { return barScale(d.cap); },
+				'y2': function(d) { return barScale(d.cap); },
+				'stroke-width': 2,
+				'stroke': "red"
+			});
 	}
+	make_tax_bars('income_tax', 180);
+	make_tax_bars('fica', 240);
+	make_tax_bars('ltcg', 300);
 	
 	// function to regenerate income bars and tax bars
 	var regen_bars = function() {
