@@ -43,7 +43,7 @@ $(document).ready( function() {
 	// transition settings to use for multiple objects
 	var t = function(transition) {
 		transition.duration(1200).ease(d3.easeCubicInOut);
-	}
+	};
 	
 	//==============================================================================
 	// Buttons to display calculated values
@@ -51,9 +51,9 @@ $(document).ready( function() {
 	// Text for three tax types buttons
 	var tax_types = {
 		income_tax: {disp: "Income tax", y: 0, inc_bar: "#earned_income_bar"},
-		fica: {disp: "FICA tax", y: 50, inc_bar: "#earned_income_bar"},
-		ltcg: {disp: "LTCG tax", y: 100, inc_bar: "#ltcg_bar"},
-	}
+		ltcg_tax: {disp: "LTCG tax", y: 50, inc_bar: "#ltcg_bar"},
+		fica: {disp: "FICA tax", y: 100, inc_bar: "#earned_income_bar"}
+	};
 	
 	var result_text = d3.select("#text_io")
 		.append("div").attr("id", "results")
@@ -89,13 +89,11 @@ $(document).ready( function() {
 				ry: 15,
 				fill: "transparent",
 				stroke: "grey"
-			})	
+			})
 	// Mouseover feature
 		.on("mouseover", function(d) {
 			// highlight button
-			d3.select(this)
-				//.transition()
-				.attr("stroke", "black");
+			d3.select(this).attr("stroke", "black");
 			// generate text results
 			gen_spec_results(d);
 			// highlight vis elements
@@ -115,15 +113,13 @@ $(document).ready( function() {
 		
 	// Functions for mouseovers
 	var mouse_on = function(d) {
-		d3.select(tax_types[d].inc_bar)
-			//.transition()
-			.attr("fill-opacity", highlight_opacity);
-	}
+		d3.select(tax_types[d].inc_bar).attr("fill-opacity", highlight_opacity);
+		d3.select('#' + d).selectAll('polyline').attr('stroke-width', 5);
+	};
 	var mouse_off = function(d) {
-		d3.select(tax_types[d].inc_bar)
-			//.transition().duration(100)
-			.attr("fill-opacity", orig_opacity)
-	}
+		d3.select(tax_types[d].inc_bar).attr("fill-opacity", orig_opacity);
+		d3.select('#' + d).selectAll('polyline').attr('stroke-width', 2);
+	};
 	
 	
 	//==============================================================================
@@ -170,7 +166,7 @@ $(document).ready( function() {
 			.text( (calc[tax].average() * 100).toFixed(2) + "%" );
 		d3.select("#Due")
 			.text( "$" + calc[tax].due.toFixed(2) );
-	}
+	};
 	
 	//==============================================================================
 	// Set up display of overall results
@@ -201,27 +197,24 @@ $(document).ready( function() {
 			.text("Effective tax rate: " + (calc.total.effective*100).toFixed(2) + "%" );
 		d3.select("#due")
 			.text("Total tax liability: $" + (calc.total.due).toFixed(2) );
-	}
+	};
 	
 	gen_overall_results(calc);
 	
 	
 	
 	//==============================================================================
-	// Bars to visualize income and taxes
+	// Bars to visualize earned income and ltcg
 	
-	// Make earned income and ltcg bars
 	var income_bar_dat = [
-		{key: "earned_income", color: "green", offset: function() { return 0 } },
-		{key:"ltcg", color: "lightseagreen", offset: function() { return inputs.earned_income } }
+		{key: "earned_income", color: "green", y_offset: function() { return 0 } },
+		{key:"ltcg", color: "lightseagreen", y_offset: function() { return inputs.earned_income } }
 	];
 	
 	var income_bars = svg.append("g")
 		.attr("id", "income_bars")
 		.selectAll("rect")
-		.data(income_bar_dat);
-		
-	var original = income_bars
+		.data(income_bar_dat)
 		.enter().append("rect")
 		.attrs({
 			"id": function(d) { return d.key + "_bar" },
@@ -230,37 +223,79 @@ $(document).ready( function() {
 			stroke: function(d) { return d.color },
 			fill: function(d) { return d.color },
 			"fill-opacity": orig_opacity
-		})
+		});
 	
-	// Make tax bars
-	var make_tax_bars = function(tax_name, xpos) {
-		var bar = d3.select('#viz > svg').append('g').attr('id', tax_name);
+	
+	//==============================================================================
+	// Bars to visualize tax brackets
+	
+	var color_scale = d3.scaleLinear().domain([0, 0.01, 0.33]).range(['lightgrey', 'ghostwhite', 'red']);
+	
+	var init_tax_bars = function(tax_name, ind) {
 		var tax = calc[tax_name];
-		bar.selectAll('line').data(tax.brackets)
-			.enter().append('line')
+		var tax_g = d3.select('#viz > svg').append('g').attr('id', tax_name);
+		tax_g.selectAll('polyline')
+			.data(tax.schedule).enter().append('polyline')
 			.attrs({
-				'x1': xpos - 10,
-				'x2': xpos + 10,
-				'y1': function(d) { return barScale(d.cap); },
-				'y2': function(d) { return barScale(d.cap); },
+				'fill': 'none',
 				'stroke-width': 2,
-				'stroke': "red"
+				'stroke': function(d) { return color_scale(d.rate); }				
 			});
-	}
-	make_tax_bars('income_tax', 180);
-	make_tax_bars('fica', 240);
-	make_tax_bars('ltcg', 300);
-	
-	// function to regenerate income bars and tax bars
-	var regen_bars = function() {
-		income_bars
-			.merge(original)
-			.transition().call(t)
+		var tax_rate = tax_g.selectAll('text').data(tax.schedule).enter().append('text');
+		tax_rate.text(function(d) { return (d.rate*100).toFixed(tax_name=='fica'?2:0) + '%' })
 			.attrs({
-				y: function(d) { return barScale( inputs[d.key] + d.offset() ) },
-				height: function(d) { return (barScale(0) - barScale( inputs[d.key] )) }
+				'x': 170 + ind*60 + 8,
+				'text-anchor': 'end',
+				'fill': function(d) { return color_scale(d.rate) },
+				'font-size': '0.7em',
+				'y': function(d, i) { return barScale(i>0?tax_rate.data()[i-1].cap+tax.offset:0) - 5; }
 			});
-	}
+	};
+	['income_tax', 'ltcg_tax', 'fica'].forEach(init_tax_bars);
+	
+	//Label income bars and tax bars
+	svg.append('g').attr('class', 'labels').selectAll('text')
+		.data(['Income', 'Income tax', 'LTCG tax', 'FICA tax']).enter().append('text')
+			.text(function(d) { return d })
+			.attrs({
+				'alignment-baseline': 'hanging',
+				'transform': function(d, i) {
+					return 'translate('+(110+61*i)+','+(barScale(0)+15)+') rotate(45)';
+				}
+			});
+
+	
+	//==============================================================================
+	// function to regenerate income bars and tax bars
+	
+	var update_tax_bars = function(tax_name, ind) {
+		var xpos = 170 + ind*60;
+		var x1 = xpos + 10;
+		var x2 = xpos - 10;
+		var tax = calc[tax_name];
+		var tax_g = d3.selectAll('#' + tax_name);
+		var tax_bar = tax_g.selectAll('polyline').data(tax.schedule);
+		tax_bar.transition().call(t).attr("points", function(d, i) {
+			var y1 = barScale(i>0?tax_bar.data()[i-1].cap+tax.offset:0);
+			var y2 = barScale(d.cap + tax.offset);
+			return x1+','+y1+' '+x1+','+(y2+8)+' '+(x1-8)+','+y2+' '+x2+','+y2;
+		});
+		var tax_rate = tax_g.selectAll('text').data(tax.schedule);
+		tax_rate.transition().call(t)
+			.attr('y', function(d, i) {
+				return barScale(i>0?tax_rate.data()[i-1].cap+tax.offset:0) - 5;
+			});
+	};
+	
+	var regen_bars = function() {
+		income_bars.transition().call(t).attrs({
+			y: function(d) { return barScale( inputs[d.key] + d.y_offset() ) },
+			height: function(d) { return (barScale(0) - barScale( inputs[d.key] )) }
+		});
+		
+		['income_tax', 'ltcg_tax', 'fica'].forEach(update_tax_bars);
+	};
+	
 	regen_bars();
 	
 
@@ -277,7 +312,7 @@ $(document).ready( function() {
 		svg.select(".yaxis").transition().call(t).call(yAxis);
 		// Regenerate bars
 		regen_bars();
-	}
+	};
 	
 	//=================================================================			
 	// When 'submit' button is pressed, update variables and regenerate
@@ -291,15 +326,13 @@ $(document).ready( function() {
 		} else {
 			return false;
 		}
-	}
+	};
 	
 	function reassign_inputs(){
 		inputs['filing_status'] = $('#filing_status').val();
-		var input_names = ['earned_income', 'ltcg', 'deductions', 'exemptions']
-		for (n = 0; n < 4; n++) {
-			inputs[input_names[n]] = parseFloat($('#' + input_names[n]).val());
-		}
-	}
+		['earned_income', 'ltcg', 'deductions', 'exemptions']
+			.forEach(function(e) { inputs[e] = parseFloat($('#' + e).val()); });
+	};
 	
 	$('#submit').button();
 	$('#invalid_input').popup( {opacity: 0.3, transition: 'all 0.3s'});
@@ -312,23 +345,5 @@ $(document).ready( function() {
 			$('#invalid_input').popup('show');
 		}
 	});
-/*
-	d3.select("#earned_income").on("input", function() {
-		inputs.earned_income = +this.value;
-		update(inputs);
-		});
-	d3.select("#ltcg").on("input", function() {
-		inputs.ltcg = +this.value;
-		update(inputs);
-		});
-	d3.select("#exemptions").on("input", function() {
-		inputs.exemptions = +this.value;
-		update(inputs);
-		});
-	d3.select("#deductions").on("input", function() {
-		inputs.deductions = +this.value;
-		update(inputs);
-		});
-*/
 });
 

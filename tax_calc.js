@@ -4,6 +4,7 @@
 var tax_schedule = {
 	"single": {
 		"income_tax_brackets": [
+			{"cap": 0, "rate": 0},
 			{"cap": 9275, "rate": 0.10},
 			{"cap": 37650, "rate": 0.15},
 			{"cap": 91150, "rate": 0.25},
@@ -22,6 +23,7 @@ var tax_schedule = {
 	
 	"mfj": {
 		"income_tax_brackets": [
+			{"cap": 0, "rate": 0},
 			{"cap": 18550, "rate": 0.10},
 			{"cap": 75300, "rate": 0.15},
 			{"cap": 151900, "rate": 0.25},
@@ -40,6 +42,7 @@ var tax_schedule = {
 	
 	"mfs": {
 		"income_tax_brackets": [
+			{"cap": 0, "rate": 0},
 			{"cap": 9275, "rate": 0.10},
 			{"cap": 37650, "rate": 0.15},
 			{"cap": 75950, "rate": 0.25},
@@ -58,6 +61,7 @@ var tax_schedule = {
 	
 	"hoh": {
 		"income_tax_brackets": [
+			{"cap": 0, "rate": 0},
 			{"cap": 13250, "rate": 0.10},
 			{"cap": 50400, "rate": 0.15},
 			{"cap": 130150, "rate": 0.25},
@@ -86,14 +90,8 @@ var inputs = {
 	deductions: 6300,
 	exemptions: 1,
 	personal_exemption_value: 4050,
-	get_sched: function() { return tax_schedule[this.filing_status] },
-	get_taxable_income: function(){
-		return Math.max(
-			this.earned_income
-			- this.deductions
-			- (this.exemptions * this.personal_exemption_value),
-			0);
-	}
+	get_offset: function() { return this.deductions + this.exemptions*this.personal_exemption_value },
+	get_sched: function() { return tax_schedule[this.filing_status] }
 };
 
 
@@ -139,34 +137,37 @@ function get_tax(taxable_income, brackets) {
 function calculate(inputs) {
 
 	// constructor for tax object
-	function Tax(taxable_amount, tax_schedule) {
-		this.taxable = taxable_amount;
+	function Tax(gross, offset, tax_schedule) {
+		this.gross = gross;
+		this.offset = offset;
+		this.taxable = Math.max(gross - offset, 0);
 		this.schedule = tax_schedule;
-		this.brackets = get_tax_brackets(taxable_amount, tax_schedule);
+		this.brackets = get_tax_brackets(this.taxable, tax_schedule);
 		this.marginal = function(){ return this.brackets[this.brackets.length - 1].rate; };
-		this.due = get_tax(taxable_amount, tax_schedule);
+		this.due = get_tax(this.taxable, tax_schedule);
 		this.average = function() {
 			var val = this.due / this.taxable
 			return (isNaN(val) ? 0 : val);
 		};
-	}
+	};
 	
 	// Object to hold tax objects and to be returned by calculated_values()
 	var calc = new Object();				
-	calc.income_tax = new Tax(inputs.get_taxable_income(), inputs.get_sched().income_tax_brackets);
-	calc.fica = new Tax(inputs.earned_income, inputs.get_sched().fica_tax_brackets);
+	calc.income_tax = new Tax(inputs.earned_income, inputs.get_offset(), inputs.get_sched().income_tax_brackets);
+	calc.fica = new Tax(inputs.earned_income, 0, inputs.get_sched().fica_tax_brackets);
 	
 	// Note: presently, deductions and exemptions only offset earned income,
 	//		 and do not offset ltcg in the case where deductions + exemptions > earned income.
 	
-	calc.ltcg = new Tax(inputs.ltcg, inputs.get_sched().ltcg_tax_brackets);
-	calc.ltcg.brackets = get_tax_brackets(calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule);
-	calc.ltcg.due = 
-		get_tax(calc.income_tax.taxable + calc.ltcg.taxable, calc.ltcg.schedule)
-		- get_tax(calc.income_tax.taxable, calc.ltcg.schedule);
+	calc.ltcg_tax = new Tax(inputs.ltcg, 0, inputs.get_sched().ltcg_tax_brackets);
+	calc.ltcg_tax.brackets = get_tax_brackets(calc.income_tax.taxable + calc.ltcg_tax.taxable, calc.ltcg_tax.schedule);
+	calc.ltcg_tax.due = 
+		get_tax(calc.income_tax.taxable + calc.ltcg_tax.taxable, calc.ltcg_tax.schedule)
+		- get_tax(calc.income_tax.taxable, calc.ltcg_tax.schedule);
+	calc.ltcg_tax.offset = inputs.get_offset();
 	
 	calc.total = new Object();
-	calc.total.due = calc.income_tax.due + calc.fica.due + calc.ltcg.due;
+	calc.total.due = calc.income_tax.due + calc.fica.due + calc.ltcg_tax.due;
 	calc.total.effective = calc.total.due / (inputs.earned_income + inputs.ltcg);
 	calc.total.marginal_on_income = calc.income_tax.marginal() + calc.fica.marginal();
 					
