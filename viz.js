@@ -125,12 +125,7 @@ $(document).ready( function() {
 	//==============================================================================
 	// Set up display of tax-specific results
 	
-	
-	var spec_result_labels = [
-		{disp: "Marginal", y: 0},
-		{disp: "Average", y: 50},
-		{disp: "Due", y: 100}
-	];
+	var spec_result_labels = ["Marginal", "Average", "Due"];
 	
 	var spec_results = result_text.append("g")
 		.attr("class", "results")
@@ -143,17 +138,17 @@ $(document).ready( function() {
 	spec_results.enter().append("text")
 		.attrs({
 			x: spec_result_x - 10,
-			y: function(d) { return d.y + button_yoffset },
+			y: function(d, i) { return i*50 + button_yoffset },
 			"text-anchor": "end"
 		})
-		.text( function(d) { return d.disp + ":" });
+		.text( function(d) { return d + ":" });
 		
 	// Text for numbers
 	spec_results.enter().append("text")
 		.attrs({
 			x: spec_result_x + 10,
-			y: function(d) { return d.y + button_yoffset },
-			"id": function(d) { return d.disp },
+			y: function(d, i) { return i*50 + button_yoffset },
+			"id": function(d) { return d },
 			"class": "result_numbers"
 		})
 		.text("");
@@ -171,32 +166,39 @@ $(document).ready( function() {
 	//==============================================================================
 	// Set up display of overall results
 	
-	var overall_result_labels = [
-		{y: 110, cl: "marginal_on_income"},
-		{y: 140, cl: "effective"},
-		{y: 170, cl: "due"}
-	];
+	var overall_result_labels = ["marginal_on_income", "effective", "due"];
 	
 	var overall_results = result_text.append("g")
 		.selectAll("text")
-		.data(overall_result_labels)
-		.enter().append("text")
+		.data(overall_result_labels);
+		
+	// Text for labels
+	overall_results.enter().append("text")
 		.attrs({
-			x: 250,
-			y: function(d) { return d.y + 100 },
+			x: 200,
+			y: function(d, i) { return i*30 + 210 },
 			"class": "results",
 			"text-anchor": "end",
-			"id": function(d) { return d.cl }
+			"id": function(d) { return d }
+		});
+	d3.select("#marginal_on_income").text("Marginal tax on income: ");
+	d3.select("#effective").text("Effective tax rate: ");
+	d3.select("#due").text("Total tax liability: ");
+	
+	// Text for numbers
+	overall_results.enter().append("text")
+		.attrs({
+			'x': 220,
+			'y': function(d, i) { return i*30 + 210 },
+			'text-anchor': 'start',
+			'id': function(d) { return d + '_number' }
 		});
 	
 	// Function to re/generate display of overall results
 	var gen_overall_results = function(calc) {
-		d3.select("#marginal_on_income")
-			.text("Marginal tax on income: " + (calc.total.marginal_on_income*100).toFixed(2) + "%" );
-		d3.select("#effective")
-			.text("Effective tax rate: " + (calc.total.effective*100).toFixed(2) + "%" );
-		d3.select("#due")
-			.text("Total tax liability: $" + (calc.total.due).toFixed(2) );
+		d3.select("#marginal_on_income_number").text((calc.total.marginal_on_income*100).toFixed(2) + "%" );
+		d3.select("#effective_number").text((calc.total.effective*100).toFixed(2) + "%" );
+		d3.select("#due_number").text('$' + (calc.total.due).toFixed(2) );
 	};
 	
 	gen_overall_results(calc);
